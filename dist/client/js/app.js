@@ -24,13 +24,16 @@
     ]
   };
 
+  function deepClone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
   let state = loadState();
   let results = [];
 
   const $ = selector => document.querySelector(selector);
   const pct = value => `${(value * 100).toFixed(value > 0 && value < .01 ? 2 : 1)}%`;
   const num = value => Number(value).toFixed(2).replace('.', ',');
-  const deepClone = value => JSON.parse(JSON.stringify(value));
   const safeInt = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.trunc(Number(value)) : fallback;
 
   function loadState() {
