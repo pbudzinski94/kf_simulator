@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Kalkulator i symulator broni do Kingdoms Forlorn." />
+    <title>Forlorn Forge — kalkulator broni</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="hero shell">
+      <div class="eyebrow"><span></span> Kingdoms Forlorn · narzędzie społecznościowe</div>
+      <div class="hero-row">
+        <div>
+          <h1>Forlorn <em>Forge</em></h1>
+          <p>Porównaj dwa oręża. Zobacz pełny rozkład obrażeń. Rzuć kośćmi, gdy los ma przemówić.</p>
+        </div>
+        <button id="reset-all" class="button button-ghost" type="button">Przywróć przykład</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="panel encounter-panel" aria-labelledby="encounter-heading">
+        <div class="section-heading">
+          <div>
+            <span class="kicker">I · Cel</span>
+            <h2 id="encounter-heading">Przeciwnik i Rycerz</h2>
+          </div>
+          <p class="section-note">Wspólne dla obu porównywanych ataków</p>
+        </div>
+
+        <div class="encounter-grid">
+          <fieldset class="field-group monster-fields">
+            <legend>Body Part potwora</legend>
+            <label class="field">
+              <span>To Hit <button class="hint" data-tip="Minimalny wynik pojedynczej kości ataku k10 po modyfikatorach. Naturalne 1 zawsze pudłuje, a 10 zawsze trafia." type="button" aria-label="Objaśnienie To Hit">?</button></span>
+              <input id="monster-to-hit" type="number" min="1" max="20" step="1" value="7" />
+            </label>
+            <label class="field">
+              <span>Armor Threshold (AT) <button class="hint" data-tip="Minimalna suma obrażeń z Power Roll potrzebna do zadania rany." type="button" aria-label="Objaśnienie AT">?</button></span>
+              <input id="monster-at" type="number" min="0" max="99" step="1" value="6" />
+            </label>
+          </fieldset>
+
+          <fieldset class="field-group portrait-fields">
+            <legend>Kości Power z portretu</legend>
+            <label class="die-field die-red"><span>Czerwone</span><input id="portrait-red" type="number" min="0" max="10" value="1" /></label>
+            <label class="die-field die-black"><span>Czarne</span><input id="portrait-black" type="number" min="0" max="10" value="0" /></label>
+            <label class="die-field die-white"><span>Białe</span><input id="portrait-white" type="number" min="0" max="10" value="0" /></label>
+          </fieldset>
+        </div>
+      </section>
+
+      <section aria-labelledby="weapons-heading">
+        <div class="section-heading standalone-heading">
+          <div>
+            <span class="kicker">II · Oręż</span>
+            <h2 id="weapons-heading">Porównanie broni</h2>
+          </div>
+          <div class="legend-inline" aria-label="Legenda kości"><span class="dot red"></span> czerwona <span class="dot black"></span> czarna <span class="dot white"></span> biała</div>
+        </div>
+
+        <div id="weapon-grid" class="weapon-grid"></div>
+      </section>
+
+      <section class="panel verdict-panel" aria-labelledby="verdict-heading">
+        <div class="section-heading compact">
+          <div>
+            <span class="kicker">III · Werdykt</span>
+            <h2 id="verdict-heading">Porównanie wyników</h2>
+          </div>
+          <span id="calculation-badge" class="calculation-badge">wynik dokładny</span>
+        </div>
+        <div id="comparison" class="comparison"></div>
+        <div id="chart" class="chart" aria-label="Porównanie rozkładów obrażeń"></div>
+      </section>
+
+      <section class="panel simulator-panel" aria-labelledby="simulator-heading">
+        <div class="section-heading">
+          <div>
+            <span class="kicker">IV · Kuźnia losu</span>
+            <h2 id="simulator-heading">Symulator pojedynczego ataku</h2>
+          </div>
+          <button id="roll-both" class="button button-primary" type="button">Rzuć dla obu broni</button>
+        </div>
+        <div id="simulator-results" class="simulator-results">
+          <p class="empty-state">Naciśnij przycisk, aby wykonać prawdziwy losowy atak każdą bronią.</p>
+        </div>
+      </section>
+
+      <details class="panel rules-panel">
+        <summary>Jak liczymy obrażenia?</summary>
+        <div class="formula">
+          <code>DMG = Moc z kości + min(Break na kościach, Break w puli) + min(Hope na kościach, Hope w puli) + bonus broni + Power w puli</code>
+          <p>Full Miss zawsze daje 0. „Kość ataku” oznacza k10 sprawdzające trafienie. „Moc z kości” oznacza symbole Attack na niestandardowych kościach Power — to dwa różne pojęcia.</p>
+        </div>
+      </details>
+    </main>
+
+    <footer class="shell footer">
+      <span>Forlorn Forge</span>
+      <span>Obliczenia lokalne · bez wysyłania danych</span>
+    </footer>
+
+    <div id="tooltip" class="tooltip" role="tooltip"></div>
+    <script src="js/dice.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
