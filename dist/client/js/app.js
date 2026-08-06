@@ -6,19 +6,18 @@
   const DEFAULTS = {
     monster: { toHit: 7, at: 6 },
     portrait: { red: 1, black: 0, white: 0 },
+    pool: { opening: 2, break: 1, hope: 0, power: 0 },
     weapons: [
       {
         name: 'Knighves', attackDice: 2, attackBonus: 0, bonusDamage: 0,
         perHit: { red: 1, black: 0, white: 0 },
         extraDice: { red: 0, black: 0, white: 0 },
-        pool: { opening: 2, break: 1, hope: 0, power: 0 },
         rerolls: { attack: 0, power: 0 }
       },
       {
         name: 'Broń II', attackDice: 1, attackBonus: 1, bonusDamage: 1,
         perHit: { red: 0, black: 1, white: 0 },
         extraDice: { red: 1, black: 0, white: 0 },
-        pool: { opening: 1, break: 2, hope: 1, power: 0 },
         rerolls: { attack: 0, power: 0 }
       }
     ]
@@ -39,7 +38,13 @@
   function loadState() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (saved?.weapons?.length === 2) return saved;
+      if (saved?.weapons?.length === 2) {
+        const migrated = deepClone(saved);
+        const legacyPool = saved.weapons[0]?.pool;
+        migrated.pool = { ...DEFAULTS.pool, ...(saved.pool || legacyPool || {}) };
+        migrated.weapons.forEach(weapon => delete weapon.pool);
+        return migrated;
+      }
     } catch (_) { /* Local storage is optional. */ }
     return deepClone(DEFAULTS);
   }
@@ -80,13 +85,6 @@
           <label class="field"><span>Stałe dodatkowe obrażenia</span><input data-bind="bonusDamage" type="number" min="0" max="50" value="${weapon.bonusDamage}" /></label>
           <div class="fields-three bonus-dice">${dieInputs('extraDice', weapon.extraDice)}</div>
 
-          <div class="divider"></div>
-          <p class="subheading">Knight Pool dla tej broni</p>
-          <div class="pool-grid">
-            ${['opening', 'break', 'hope', 'power'].map(key => `
-              <label class="pool-field"><span>${key[0].toUpperCase() + key.slice(1)}</span><input data-bind="pool.${key}" type="number" min="0" max="30" value="${weapon.pool[key]}" /></label>`).join('')}
-          </div>
-
           <div class="result-strip" id="weapon-result-${index}"></div>
         </div>
       </article>`;
@@ -104,6 +102,7 @@
     $('#monster-to-hit').value = state.monster.toHit;
     $('#monster-at').value = state.monster.at;
     for (const color of COLORS) $(`#portrait-${color}`).value = state.portrait[color];
+    for (const key of ['opening', 'break', 'hope', 'power']) $(`#pool-${key}`).value = state.pool[key];
   }
 
   function setNested(object, path, value) {
@@ -115,7 +114,7 @@
 
   function configFor(index) {
     const weapon = state.weapons[index];
-    return { weapon, pool: weapon.pool, portrait: state.portrait, monster: state.monster };
+    return { weapon, pool: state.pool, portrait: state.portrait, monster: state.monster };
   }
 
   function recalculate() {
@@ -211,6 +210,7 @@
     } else if (target.id === 'monster-to-hit') state.monster.toHit = safeInt(target.value, 7);
     else if (target.id === 'monster-at') state.monster.at = safeInt(target.value, 0);
     else if (target.id.startsWith('portrait-')) state.portrait[target.id.replace('portrait-', '')] = safeInt(target.value);
+    else if (target.id.startsWith('pool-')) state.pool[target.id.replace('pool-', '')] = safeInt(target.value);
     else return;
     recalculate();
   }

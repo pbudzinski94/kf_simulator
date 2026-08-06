@@ -51,6 +51,17 @@
             <label class="die-field die-black"><span>Czarne</span><input id="portrait-black" type="number" min="0" max="10" value="0" /></label>
             <label class="die-field die-white"><span>Białe</span><input id="portrait-white" type="number" min="0" max="10" value="0" /></label>
           </fieldset>
+
+          <fieldset class="field-group shared-pool-fields">
+            <legend>Wspólny Knight Pool</legend>
+            <p class="field-group-note">Ten sam zestaw żetonów jest używany do obliczeń obu broni.</p>
+            <div class="pool-grid">
+              <label class="pool-field"><span>Opening</span><input id="pool-opening" type="number" min="0" max="30" value="2" /></label>
+              <label class="pool-field"><span>Break</span><input id="pool-break" type="number" min="0" max="30" value="1" /></label>
+              <label class="pool-field"><span>Hope</span><input id="pool-hope" type="number" min="0" max="30" value="0" /></label>
+              <label class="pool-field"><span>Power</span><input id="pool-power" type="number" min="0" max="30" value="0" /></label>
+            </div>
+          </fieldset>
         </div>
       </section>
 
@@ -106,8 +117,8 @@
     </footer>
 
     <div id="tooltip" class="tooltip" role="tooltip"></div>
-    <script src="js/dice.js?v=2"></script>
-    <script src="js/engine.js?v=2"></script>
-    <script src="js/app.js?v=2"></script>
+    <script src="js/dice.js?v=3"></script>
+    <script src="js/engine.js?v=3"></script>
+    <script src="js/app.js?v=3"></script>
   </body>
 </html>
