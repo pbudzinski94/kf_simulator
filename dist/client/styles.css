@@ -106,7 +106,7 @@ main { padding: 34px 0 72px; }
 .portrait-fields { grid-template-columns: repeat(3, 1fr); }
 .shared-pool-fields { grid-column: 1 / -1; }
 .field-group-note { margin: -3px 0 1px; color: var(--muted); font-size: 11px; }
-.shared-pool-fields .pool-grid { width: 100%; }
+.shared-pool-fields .pool-grid { width: 100%; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); }
 
 .field, .die-field { display: grid; gap: 7px; color: #c8c8be; font-size: 12px; font-weight: 600; }
 .field > span { display: flex; align-items: center; gap: 6px; }
@@ -213,12 +213,14 @@ input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(198,168,106,
 .roll-line > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
 .dice-list { display: flex; flex-wrap: wrap; gap: 7px; }
 .rolled-die { min-width: 34px; padding: 7px 8px; border: 1px solid var(--line-bright); background: #151815; text-align: center; font-weight: 700; }
+.rolled-die small, .power-chip small { margin-left: 3px; color: var(--gold-bright); font-size: 9px; }
 .rolled-die.hit { border-color: var(--green); color: #c6d7bc; }
 .rolled-die.miss { color: #8e8f89; }
 .power-chip { padding: 6px 8px; border: 1px solid var(--line); font-size: 11px; }
 .power-chip.red { border-color: rgba(157,65,58,.7); }
 .power-chip.black { border-color: rgba(130,140,135,.45); }
 .power-chip.white { border-color: rgba(217,215,204,.65); }
+.power-chip.black-effect { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(198,168,106,.16); }
 .damage-total { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; }
 .damage-total strong { color: var(--gold-bright); font-family: Cinzel, serif; font-size: 26px; }
 .damage-total small { color: var(--muted); }

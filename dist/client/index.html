@@ -60,6 +60,9 @@
               <label class="pool-field"><span>Break</span><input id="pool-break" type="number" min="0" max="30" value="1" /></label>
               <label class="pool-field"><span>Hope</span><input id="pool-hope" type="number" min="0" max="30" value="0" /></label>
               <label class="pool-field"><span>Power</span><input id="pool-power" type="number" min="0" max="30" value="0" /></label>
+              <label class="pool-field"><span>Przerzut ataku</span><input id="pool-attackRerolls" type="number" min="0" max="20" value="0" /></label>
+              <label class="pool-field"><span>Przerzut Power</span><input id="pool-powerRerolls" type="number" min="0" max="20" value="0" /></label>
+              <label class="pool-field"><span>Black</span><input id="pool-black" type="number" min="0" max="20" value="0" /></label>
             </div>
           </fieldset>
         </div>
@@ -107,6 +110,7 @@
         <div class="formula">
           <code>DMG = Moc z kości + min(Break na kościach, Break w puli) + min(Hope na kościach, Hope w puli) + bonus broni + Power w puli</code>
           <p>Full Miss zawsze daje 0. „Kość ataku” oznacza k10 sprawdzające trafienie. „Moc z kości” oznacza symbole Attack na niestandardowych kościach Power — to dwa różne pojęcia.</p>
+          <p>Przerzuty ataku są używane na pudłach. Przerzuty Power i Black wybierają kości strategią maksymalizującą najpierw szansę rany, a potem średnie obrażenia. Wszystkie wybrane kości są deklarowane przed przerzutem. Nowy wynik jest obowiązkowy i żadna kość nie może być przerzucona drugi raz. Break wyrzucony na kości przerzuconej przez Black staje się bezpośrednim DMG.</p>
         </div>
       </details>
     </main>
@@ -117,8 +121,8 @@
     </footer>
 
     <div id="tooltip" class="tooltip" role="tooltip"></div>
-    <script src="js/dice.js?v=3"></script>
-    <script src="js/engine.js?v=3"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/dice.js?v=4"></script>
+    <script src="js/engine.js?v=4"></script>
+    <script src="js/app.js?v=4"></script>
   </body>
 </html>

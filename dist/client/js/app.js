@@ -6,19 +6,17 @@
   const DEFAULTS = {
     monster: { toHit: 7, at: 6 },
     portrait: { red: 1, black: 0, white: 0 },
-    pool: { opening: 2, break: 1, hope: 0, power: 0 },
+    pool: { opening: 2, break: 1, hope: 0, power: 0, attackRerolls: 0, powerRerolls: 0, black: 0 },
     weapons: [
       {
         name: 'Knighves', attackDice: 2, attackBonus: 0, bonusDamage: 0,
         perHit: { red: 1, black: 0, white: 0 },
-        extraDice: { red: 0, black: 0, white: 0 },
-        rerolls: { attack: 0, power: 0 }
+        extraDice: { red: 0, black: 0, white: 0 }
       },
       {
         name: 'Broń II', attackDice: 1, attackBonus: 1, bonusDamage: 1,
         perHit: { red: 0, black: 1, white: 0 },
-        extraDice: { red: 1, black: 0, white: 0 },
-        rerolls: { attack: 0, power: 0 }
+        extraDice: { red: 1, black: 0, white: 0 }
       }
     ]
   };
@@ -102,7 +100,9 @@
     $('#monster-to-hit').value = state.monster.toHit;
     $('#monster-at').value = state.monster.at;
     for (const color of COLORS) $(`#portrait-${color}`).value = state.portrait[color];
-    for (const key of ['opening', 'break', 'hope', 'power']) $(`#pool-${key}`).value = state.pool[key];
+    for (const key of ['opening', 'break', 'hope', 'power', 'attackRerolls', 'powerRerolls', 'black']) {
+      $(`#pool-${key}`).value = state.pool[key];
+    }
   }
 
   function setNested(object, path, value) {
@@ -184,15 +184,15 @@
     const weapon = state.weapons[index];
     const outcome = sim.fullMiss ? 'Full Miss' : sim.wound ? 'Rana' : 'Brak rany';
     const powerDice = sim.powerRolls.length
-      ? sim.powerRolls.map(die => `<span class="power-chip ${die.color}">${escapeHtml(die.label)}</span>`).join('')
+      ? sim.powerRolls.map(die => `<span class="power-chip ${die.color}${die.black ? ' black-effect' : ''}">${escapeHtml(die.label)}${die.rerolled ? ` <small>↻${die.black ? ' Black' : ''}</small>` : ''}</span>`).join('')
       : '<span class="power-chip">bez rzutu Power</span>';
     return `<article class="roll-card">
       <h3>${escapeHtml(weapon.name)} <span class="roll-outcome ${sim.fullMiss || !sim.wound ? 'miss' : ''}">${outcome}</span></h3>
       <div class="roll-line"><span>Kości ataku k10 · ${sim.hits} traf.</span><div class="dice-list">
-        ${sim.attackRolls.map(item => `<span class="rolled-die ${item.hit ? 'hit' : 'miss'}" title="${item.hit ? 'Trafienie' : 'Pudło'}">${item.roll}</span>`).join('') || '<span class="power-chip">brak kości</span>'}
+        ${sim.attackRolls.map(item => `<span class="rolled-die ${item.hit ? 'hit' : 'miss'}" title="${item.rerolled ? `Przerzut: ${item.initialRoll} → ${item.roll}. ` : ''}${item.hit ? 'Trafienie' : 'Pudło'}">${item.roll}${item.rerolled ? '<small>↻</small>' : ''}</span>`).join('') || '<span class="power-chip">brak kości</span>'}
       </div></div>
       <div class="roll-line"><span>Kości Power</span><div class="dice-list">${powerDice}</div></div>
-      ${sim.symbols ? `<div class="roll-line"><span>Suma symboli na kościach</span><div class="dice-list"><span class="power-chip">Moc ${sim.symbols.power}</span><span class="power-chip">Break ${sim.symbols.break}</span><span class="power-chip">Hope ${sim.symbols.hope}</span></div></div>` : ''}
+      ${sim.symbols ? `<div class="roll-line"><span>Suma symboli na kościach</span><div class="dice-list"><span class="power-chip">Moc ${sim.symbols.power}</span><span class="power-chip">Break ${sim.symbols.break}</span><span class="power-chip">Hope ${sim.symbols.hope}</span>${sim.symbols.blackBreak ? `<span class="power-chip black-effect">Black DMG +${sim.symbols.blackBreak}</span>` : ''}</div></div>` : ''}
       <div class="damage-total"><small>AT ${state.monster.at}</small><strong>${sim.damage} DMG</strong></div>
     </article>`;
   }

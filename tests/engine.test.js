@@ -39,6 +39,38 @@ approx(result.hitChance, 0.64);
 approx(result.fullMissChance, 0.36);
 approx(result.damageDistribution.reduce((sum, item) => sum + item.probability, 0), 1, 1e-8);
 
+const oneAttackReroll = engine.hitDistribution(2, 7, 0, 1);
+approx(oneAttackReroll[0].probability, 0.216);
+approx(oneAttackReroll[1].probability, 0.432);
+approx(oneAttackReroll[2].probability, 0.352);
+
+const allAttackRerolls = engine.hitDistribution(2, 7, 0, 2);
+approx(allAttackRerolls[0].probability, 0.1296);
+
+const singleRedConfig = {
+  monster: { toHit: 1, at: 2 },
+  portrait: { red: 1, black: 0, white: 0 },
+  weapon: {
+    attackDice: 1, attackBonus: 0, bonusDamage: 0,
+    perHit: { red: 0, black: 0, white: 0 },
+    extraDice: { red: 0, black: 0, white: 0 }
+  },
+  pool: { opening: 0, break: 0, hope: 0, power: 0, attackRerolls: 0, powerRerolls: 1, black: 0 }
+};
+const regularPowerReroll = engine.calculate(singleRedConfig);
+approx(regularPowerReroll.woundChance, 0.9 * 11 / 36);
+approx(regularPowerReroll.damageDistribution.reduce((sum, item) => sum + item.probability, 0), 1, 1e-8);
+
+const blackPowerReroll = engine.calculate({
+  ...singleRedConfig,
+  pool: { ...singleRedConfig.pool, powerRerolls: 0, black: 1 }
+});
+approx(blackPowerReroll.woundChance, 0.9 * 7 / 12);
+approx(blackPowerReroll.damageDistribution.reduce((sum, item) => sum + item.probability, 0), 1, 1e-8);
+
+const zeroAt = engine.calculate({ ...baseConfig, monster: { toHit: 7, at: 0 } });
+approx(zeroAt.woundChance, zeroAt.hitChance);
+
 const impossible = engine.calculate({ ...baseConfig, monster: { toHit: 99, at: 99 } });
 if (impossible.woundChance !== 0) throw new Error('Impossible AT should not wound.');
 
