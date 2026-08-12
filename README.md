@@ -25,4 +25,6 @@ Definicje ścianek znajdują się w `js/dice.js`, matematyka i strategia przerzu
 
 Testy silnika można uruchomić poleceniem `node tests/engine.test.js`.
 
+Niezależny test Monte Carlo w Pythonie wykonuje domyślnie 10 000 ataków na każdą broń i porównuje rezultat z dokładnym silnikiem: `python tests/monte_carlo.py --check`. Parametry `--trials`, `--seed` i `--config` pozwalają zmienić liczbę prób, powtarzalność oraz konfigurację JSON.
+
 Statyczny pakiet wdrożeniowy tworzy `build.ps1`.
