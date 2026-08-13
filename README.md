@@ -27,4 +27,16 @@ Testy silnika można uruchomić poleceniem `node tests/engine.test.js`.
 
 Niezależny test Monte Carlo w Pythonie wykonuje domyślnie 10 000 ataków na każdą broń i porównuje rezultat z dokładnym silnikiem: `python tests/monte_carlo.py --check`. Parametry `--trials`, `--seed` i `--config` pozwalają zmienić liczbę prób, powtarzalność oraz konfigurację JSON.
 
-Statyczny pakiet wdrożeniowy tworzy `build.ps1`.
+Statyczny pakiet wdrożeniowy tworzy `npm run build` na Windowsie, Linuksie i macOS. Dotychczasowy `build.ps1` pozostaje dostępny lokalnie na Windowsie.
+
+## Cloudflare Workers Builds
+
+Repozytorium zawiera `wrangler.jsonc` dla osobnego Workera `forlorn-forge-github`. W Cloudflare połącz repozytorium `pbudzinski94/kf_simulator` i ustaw:
+
+- branch produkcyjny: `master`,
+- root directory: `/`,
+- build command: `npm run build`,
+- deploy command: `npx wrangler deploy`,
+- non-production deploy command: `npx wrangler versions upload`.
+
+Bezpośrednie wdrożenie Cloudflare jest niezależne od istniejącej publikacji Sites pod adresem `chatgpt.site`.

@@ -1,6 +1,11 @@
 .DS_Store
 Thumbs.db
 *.log
+node_modules/
+.npm-cache/
+.wrangler/
+.wrangler-dist/
+.xdg-config/
 __pycache__/
 *.pyc
 .idea/
