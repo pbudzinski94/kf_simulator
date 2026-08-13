@@ -80,7 +80,8 @@ def damage_for_roll(rolls: tuple[tuple[str, int, bool], ...], weapon: dict, pool
         power += face_power
         hope += face_hope
         if used_black:
-            black_break += face_break
+            black_break += min(face_break, 1)
+            normal_break += max(face_break - 1, 0)
         else:
             normal_break += face_break
     return (

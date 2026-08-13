@@ -68,6 +68,16 @@ const blackPowerReroll = engine.calculate({
 approx(blackPowerReroll.woundChance, 0.9 * 7 / 12);
 approx(blackPowerReroll.damageDistribution.reduce((sum, item) => sum + item.probability, 0), 1, 1e-8);
 
+// With 1 base Power and 1 Break token, Black results containing respectively
+// 1, 2 and 3 Breaks deal 2, 3 and 3 damage.
+for (const [breakSymbols, expectedDamage] of [[1, 2], [2, 3], [3, 3]]) {
+  const split = engine.splitBlackBreak(breakSymbols);
+  const damage = 1 + split.direct + Math.min(split.normal, 1);
+  if (damage !== expectedDamage) {
+    throw new Error(`Black result with ${breakSymbols} Break expected ${expectedDamage}, got ${damage}`);
+  }
+}
+
 const zeroAt = engine.calculate({ ...baseConfig, monster: { toHit: 7, at: 0 } });
 approx(zeroAt.woundChance, zeroAt.hitChance);
 

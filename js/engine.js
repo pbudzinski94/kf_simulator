@@ -3,6 +3,14 @@
 
   const COLORS = ['red', 'black', 'white'];
   const FACE_COUNT = 6;
+
+  function splitBlackBreak(breakSymbols) {
+    const total = clampInt(breakSymbols, 0, 99);
+    return {
+      direct: Math.min(1, total),
+      normal: Math.max(0, total - 1)
+    };
+  }
   const EPSILON = 1e-12;
   const dice = () => root.KF.POWER_DICE;
   const clampInt = (value, min = 0, max = 99) => Math.min(max, Math.max(min, Math.trunc(Number(value) || 0)));
@@ -117,9 +125,10 @@
       const dieFace = dice()[color][slot % FACE_COUNT];
       const normalCount = state.eligible[slot] + state.locked[slot];
       const blackCount = state.black[slot];
+      const blackBreak = splitBlackBreak(dieFace.break);
       symbols.power += dieFace.power * (normalCount + blackCount);
-      symbols.break += dieFace.break * normalCount;
-      symbols.blackBreak += dieFace.break * blackCount;
+      symbols.break += dieFace.break * normalCount + blackBreak.normal * blackCount;
+      symbols.blackBreak += blackBreak.direct * blackCount;
       symbols.hope += dieFace.hope * (normalCount + blackCount);
     }
     return symbols;
@@ -163,15 +172,16 @@
           const next = new Map();
           for (const state of states.values()) {
             for (const dieFace of dice()[color]) {
+              const blackBreak = splitBlackBreak(dieFace.break);
               const power = state.power + dieFace.power;
-              const breakSymbols = state.break + (type === 'regular' ? dieFace.break : 0);
+              const breakSymbols = state.break + (type === 'regular' ? dieFace.break : blackBreak.normal);
               const hope = state.hope + dieFace.hope;
-              const blackBreak = state.blackBreak + (type === 'black' ? dieFace.break : 0);
-              const key = `${power}|${breakSymbols}|${hope}|${blackBreak}`;
+              const directBlackBreak = state.blackBreak + (type === 'black' ? blackBreak.direct : 0);
+              const key = `${power}|${breakSymbols}|${hope}|${directBlackBreak}`;
               const probability = state.probability / FACE_COUNT;
               const existing = next.get(key);
               if (existing) existing.probability += probability;
-              else next.set(key, { power, break: breakSymbols, hope, blackBreak, probability });
+              else next.set(key, { power, break: breakSymbols, hope, blackBreak: directBlackBreak, probability });
             }
           }
           states = next;
@@ -436,6 +446,7 @@
     hitDistribution,
     convolvePowerDice,
     damageFromState,
-    powerDiceForHits
+    powerDiceForHits,
+    splitBlackBreak
   };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

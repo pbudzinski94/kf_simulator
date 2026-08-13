@@ -13,7 +13,7 @@ Otwórz `index.html` w przeglądarce. Aplikacja nie wymaga instalowania zależno
 - jeden wspólny Knight Pool dla porównywanych broni,
 - Break, Hope, Power i Opening,
 - ograniczone przerzuty kości ataku i kości Power,
-- efekt Black: przerzut kości Power i zamiana jej Break na bezpośrednie obrażenia,
+- efekt Black: przerzut kości Power i zamiana najwyżej 1 Break z jej wyniku na bezpośrednie obrażenie,
 - szansa rany, wartość oczekiwana, maksimum i rozkład obrażeń,
 - losowy symulator pojedynczego ataku.
 
