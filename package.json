@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/engine.test.js",
+    "test": "npm run build && node tests/engine.test.js && node tests/version-config.test.js",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

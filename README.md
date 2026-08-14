@@ -29,6 +29,8 @@ Niezależny test Monte Carlo w Pythonie wykonuje domyślnie 10 000 ataków na ka
 
 Statyczny pakiet wdrożeniowy tworzy `npm run build` na Windowsie, Linuksie i macOS. Dotychczasowy `build.ps1` pozostaje dostępny lokalnie na Windowsie.
 
+Numer widoczny w stopce jest przechowywany w `app.config.json` i pobierany bez cache, aby łatwo potwierdzić aktualne wdrożenie. Przed każdym pushem podbij wersję w formacie `RRRR.MM.DD.N`, a następnie uruchom `npm run build`.
+
 ## Cloudflare Workers Builds
 
 Repozytorium zawiera `wrangler.jsonc` dla osobnego Workera `forlorn-forge-github`. W Cloudflare połącz repozytorium `pbudzinski94/kf_simulator` i ustaw:

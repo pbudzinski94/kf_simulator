@@ -33,6 +33,21 @@
   const num = value => Number(value).toFixed(2).replace('.', ',');
   const safeInt = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.trunc(Number(value)) : fallback;
 
+  async function loadAppVersion() {
+    const target = $('#app-version');
+    if (!target) return;
+    try {
+      const response = await fetch(`app.config.json?ts=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Config HTTP ${response.status}`);
+      const config = await response.json();
+      const version = String(config.version || '').trim();
+      if (!version) throw new Error('Missing app version');
+      target.textContent = `Wersja ${version} · Obliczenia lokalne · bez wysyłania danych`;
+    } catch (_) {
+      target.textContent = 'Wersja lokalna · Obliczenia lokalne · bez wysyłania danych';
+    }
+  }
+
   function loadState() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -239,6 +254,7 @@
   }
 
   renderWeapons();
+  loadAppVersion();
   bindInitialValues();
   recalculate();
   initTooltips();

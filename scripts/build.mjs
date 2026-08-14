@@ -13,6 +13,7 @@ await mkdir(serverRoot, { recursive: true });
 
 await Promise.all([
   cp(join(projectRoot, 'index.html'), join(clientRoot, 'index.html')),
+  cp(join(projectRoot, 'app.config.json'), join(clientRoot, 'app.config.json')),
   cp(join(projectRoot, 'styles.css'), join(clientRoot, 'styles.css')),
   cp(join(projectRoot, 'js'), join(clientRoot, 'js'), { recursive: true }),
   cp(join(projectRoot, 'worker', 'index.js'), join(serverRoot, 'index.js'))
