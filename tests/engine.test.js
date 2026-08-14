@@ -78,6 +78,27 @@ for (const [breakSymbols, expectedDamage] of [[1, 2], [2, 3], [3, 3]]) {
   }
 }
 
+// Hope converts Hope symbols first, then uses only its remainder on Breaks.
+const hopeFirst = engine.conversionDamage(1, 2, { break: 0, hope: 1 });
+if (hopeFirst.hopeDamage !== 1 || hopeFirst.breakDamage !== 0 || hopeFirst.total !== 1) {
+  throw new Error(`Hope priority is incorrect: ${JSON.stringify(hopeFirst)}`);
+}
+const flexibleHope = engine.conversionDamage(2, 1, { break: 0, hope: 2 });
+if (flexibleHope.hopeDamage !== 1 || flexibleHope.breakDamage !== 1 || flexibleHope.total !== 2) {
+  throw new Error(`Hope should convert a remaining Break: ${JSON.stringify(flexibleHope)}`);
+}
+const noDoubleSpend = engine.conversionDamage(2, 1, { break: 1, hope: 2 });
+if (noDoubleSpend.total !== 3) {
+  throw new Error(`Break symbols were counted more than once: ${JSON.stringify(noDoubleSpend)}`);
+}
+if (engine.damageFromState(
+  { power: 1, break: 2, hope: 1 },
+  { bonusDamage: 0 },
+  { break: 1, hope: 2, power: 0 }
+) !== 4) {
+  throw new Error('Flexible Hope was not included in final damage.');
+}
+
 const zeroAt = engine.calculate({ ...baseConfig, monster: { toHit: 7, at: 0 } });
 approx(zeroAt.woundChance, zeroAt.hitChance);
 

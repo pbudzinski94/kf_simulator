@@ -11,6 +11,17 @@
       normal: Math.max(0, total - 1)
     };
   }
+
+  function conversionDamage(breakSymbols, hopeSymbols, pool) {
+    const hopeTokens = clampInt(pool.hope);
+    const hopeDamage = Math.min(clampInt(hopeSymbols), hopeTokens);
+    const remainingHope = hopeTokens - hopeDamage;
+    const breakDamage = Math.min(
+      clampInt(breakSymbols),
+      clampInt(pool.break) + remainingHope
+    );
+    return { hopeDamage, breakDamage, total: hopeDamage + breakDamage };
+  }
   const EPSILON = 1e-12;
   const dice = () => root.KF.POWER_DICE;
   const clampInt = (value, min = 0, max = 99) => Math.min(max, Math.max(min, Math.trunc(Number(value) || 0)));
@@ -86,9 +97,9 @@
   }
 
   function damageFromState(state, weapon, pool) {
+    const converted = conversionDamage(state.break, state.hope, pool);
     return state.power
-      + Math.min(state.break, clampInt(pool.break))
-      + Math.min(state.hope, clampInt(pool.hope))
+      + converted.total
       + clampInt(weapon.bonusDamage)
       + clampInt(pool.power);
   }
@@ -136,10 +147,10 @@
 
   function damageFromRollState(state, weapon, pool) {
     const symbols = symbolsFromRollState(state);
+    const converted = conversionDamage(symbols.break, symbols.hope, pool);
     return symbols.power
       + symbols.blackBreak
-      + Math.min(symbols.break, clampInt(pool.break))
-      + Math.min(symbols.hope, clampInt(pool.hope))
+      + converted.total
       + clampInt(weapon.bonusDamage)
       + clampInt(pool.power);
   }
@@ -209,10 +220,14 @@
     const rerolled = rerollSymbolDistribution(rerollsByColor.regular, rerollsByColor.black, outcomeCache);
     const distribution = new Map();
     for (const outcome of rerolled.values()) {
+      const converted = conversionDamage(
+        fixed.break + outcome.break,
+        fixed.hope + outcome.hope,
+        pool
+      );
       const damage = fixed.power + outcome.power
         + fixed.blackBreak + outcome.blackBreak
-        + Math.min(fixed.break + outcome.break, clampInt(pool.break))
-        + Math.min(fixed.hope + outcome.hope, clampInt(pool.hope))
+        + converted.total
         + clampInt(weapon.bonusDamage)
         + clampInt(pool.power);
       distribution.set(damage, (distribution.get(damage) || 0) + outcome.probability);
@@ -447,6 +462,7 @@
     convolvePowerDice,
     damageFromState,
     powerDiceForHits,
-    splitBlackBreak
+    splitBlackBreak,
+    conversionDamage
   };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

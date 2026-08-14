@@ -11,7 +11,7 @@ Otwórz `index.html` w przeglądarce. Aplikacja nie wymaga instalowania zależno
 - dokładny rozkład trafień z kości ataku k10,
 - dokładny rozkład niestandardowych kości Power,
 - jeden wspólny Knight Pool dla porównywanych broni,
-- Break, Hope, Power i Opening,
+- Break, Power i Opening oraz Hope, które najpierw zamienia symbole Hope, a następnie pozostałe symbole Break,
 - ograniczone przerzuty kości ataku i kości Power,
 - efekt Black: przerzut kości Power i zamiana najwyżej 1 Break z jej wyniku na bezpośrednie obrażenie,
 - szansa rany, wartość oczekiwana, maksimum i rozkład obrażeń,

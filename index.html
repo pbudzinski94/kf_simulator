@@ -58,7 +58,7 @@
             <div class="pool-grid">
               <label class="pool-field"><span>Opening</span><input id="pool-opening" type="number" min="0" max="30" value="2" /></label>
               <label class="pool-field"><span>Break</span><input id="pool-break" type="number" min="0" max="30" value="1" /></label>
-              <label class="pool-field"><span>Hope</span><input id="pool-hope" type="number" min="0" max="30" value="0" /></label>
+              <label class="pool-field"><span>Hope <button class="hint" data-tip="Najpierw zamienia symbole Hope na obrażenia. Niewykorzystane żetony Hope mogą następnie zamieniać pozostałe symbole Break." type="button" aria-label="Objaśnienie Hope">?</button></span><input id="pool-hope" type="number" min="0" max="30" value="0" /></label>
               <label class="pool-field"><span>Power</span><input id="pool-power" type="number" min="0" max="30" value="0" /></label>
               <label class="pool-field"><span>Przerzut ataku</span><input id="pool-attackRerolls" type="number" min="0" max="20" value="0" /></label>
               <label class="pool-field"><span>Przerzut Power</span><input id="pool-powerRerolls" type="number" min="0" max="20" value="0" /></label>
@@ -108,8 +108,9 @@
       <details class="panel rules-panel">
         <summary>Jak liczymy obrażenia?</summary>
         <div class="formula">
-          <code>DMG = Moc z kości + min(Break na kościach, Break w puli) + min(Hope na kościach, Hope w puli) + bonus broni + Power w puli</code>
+          <code>Hope DMG = min(Hope na kościach, Hope w puli) · pozostałe Hope = max(0, Hope w puli − Hope DMG) · Break DMG = min(Break na kościach, Break w puli + pozostałe Hope) · DMG = Moc + Black DMG + Hope DMG + Break DMG + bonus broni + Power w puli</code>
           <p>Full Miss zawsze daje 0. „Kość ataku” oznacza k10 sprawdzające trafienie. „Moc z kości” oznacza symbole Attack na niestandardowych kościach Power — to dwa różne pojęcia.</p>
+          <p>Żetony Hope najpierw zamieniają symbole Hope na obrażenia. Dopiero niewykorzystane żetony Hope mogą zamieniać symbole Break. Każdy symbol jest liczony najwyżej raz, więc ten sam Break nie może zostać wykorzystany jednocześnie przez Break i Hope.</p>
           <p>Przerzuty ataku są używane na pudłach. Przerzuty Power i Black wybierają kości strategią maksymalizującą najpierw szansę rany, a potem średnie obrażenia. Wszystkie wybrane kości są deklarowane przed przerzutem. Nowy wynik jest obowiązkowy i żadna kość nie może być przerzucona drugi raz. Black zamienia najwyżej 1 Break z wyniku przerzuconej kości w bezpośredni DMG; pozostałe Breaki wymagają zwykłych żetonów Break.</p>
         </div>
       </details>

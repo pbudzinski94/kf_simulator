@@ -73,6 +73,14 @@ def power_counts(weapon: dict, portrait: dict, hits: int) -> dict[str, int]:
     }
 
 
+def conversion_damage(break_symbols: int, hope_symbols: int, pool: dict) -> int:
+    hope_tokens = int(pool["hope"])
+    hope_damage = min(hope_symbols, hope_tokens)
+    remaining_hope = hope_tokens - hope_damage
+    break_damage = min(break_symbols, int(pool["break"]) + remaining_hope)
+    return hope_damage + break_damage
+
+
 def damage_for_roll(rolls: tuple[tuple[str, int, bool], ...], weapon: dict, pool: dict) -> int:
     power = normal_break = hope = black_break = 0
     for color, face_index, used_black in rolls:
@@ -87,8 +95,7 @@ def damage_for_roll(rolls: tuple[tuple[str, int, bool], ...], weapon: dict, pool
     return (
         power
         + black_break
-        + min(normal_break, int(pool["break"]))
-        + min(hope, int(pool["hope"]))
+        + conversion_damage(normal_break, hope, pool)
         + int(weapon["bonusDamage"])
         + int(pool["power"])
     )
