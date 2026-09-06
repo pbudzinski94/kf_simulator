@@ -32,7 +32,7 @@ function integer(value, field, min, max) {
 __name(integer, "integer");
 function validateWeapon(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Brak danych broni.");
-  const name = typeof input.name === "string" ? input.name.trim() : "";
+  const name = typeof input.name === "string" ? input.name.normalize('NFKC').trim().replace(/\s+/gu, ' ') : "";
   if (!name || name.length > 100) throw new Error("Nazwa broni musi mie\u0107 od 1 do 100 znak\xF3w.");
   return {
     name,
@@ -71,61 +71,44 @@ async function listWeapons(db) {
   return (result.results || []).map(weaponFromRow);
 }
 __name(listWeapons, "listWeapons");
-async function saveWeapon(db, weapon) {
-  await db.prepare(`
-    INSERT INTO weapons (
-      name, attack_dice, attack_bonus, bonus_damage,
-      per_hit_red, per_hit_black, per_hit_white,
-      extra_dice_red, extra_dice_black, extra_dice_white
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(name) DO UPDATE SET
-      attack_dice = excluded.attack_dice,
-      attack_bonus = excluded.attack_bonus,
-      bonus_damage = excluded.bonus_damage,
-      per_hit_red = excluded.per_hit_red,
-      per_hit_black = excluded.per_hit_black,
-      per_hit_white = excluded.per_hit_white,
-      extra_dice_red = excluded.extra_dice_red,
-      extra_dice_black = excluded.extra_dice_black,
-      extra_dice_white = excluded.extra_dice_white,
-      updated_at = CURRENT_TIMESTAMP
-  `).bind(
-    weapon.name,
-    weapon.attackDice,
-    weapon.attackBonus,
-    weapon.bonusDamage,
-    weapon.perHit.red,
-    weapon.perHit.black,
-    weapon.perHit.white,
-    weapon.extraDice.red,
-    weapon.extraDice.black,
-    weapon.extraDice.white
-  ).run();
-  const row = await db.prepare(`${WEAPON_SELECT} WHERE name = ? COLLATE NOCASE`).bind(weapon.name).first();
+async function saveWeapon(db, weapon, id = null) {
+  const values = [weapon.name, weapon.attackDice, weapon.attackBonus, weapon.bonusDamage,
+    weapon.perHit.red, weapon.perHit.black, weapon.perHit.white,
+    weapon.extraDice.red, weapon.extraDice.black, weapon.extraDice.white, weapon.name.toLowerCase()];
+  const result = id === null
+    ? await db.prepare('INSERT INTO weapons (name, attack_dice, attack_bonus, bonus_damage, per_hit_red, per_hit_black, per_hit_white, extra_dice_red, extra_dice_black, extra_dice_white, name_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id').bind(...values).first()
+    : await db.prepare('UPDATE weapons SET name = ?, attack_dice = ?, attack_bonus = ?, bonus_damage = ?, per_hit_red = ?, per_hit_black = ?, per_hit_white = ?, extra_dice_red = ?, extra_dice_black = ?, extra_dice_white = ?, name_key = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING id').bind(...values, id).first();
+  if (!result) return null;
+  const row = await db.prepare(WEAPON_SELECT + ' WHERE id = ?').bind(result.id).first();
   return weaponFromRow(row);
 }
-__name(saveWeapon, "saveWeapon");
 async function handleApi(request, env, url) {
-  if (url.pathname !== "/api/weapons") return json({ error: "Nie znaleziono endpointu." }, 404);
-  if (!env.DB) return json({ error: "Binding D1 \u201EDB\u201D nie jest skonfigurowany." }, 503);
-  if (request.method === "GET") return json({ weapons: await listWeapons(env.DB) });
-  if (request.method === "POST") {
-    let body;
+  const match = url.pathname.match(/^\/api\/weapons(?:\/([1-9]\d*))?$/);
+  if (!match) return json({ error: 'Nie znaleziono endpointu.' }, 404);
+  const id = match[1] ? Number(match[1]) : null;
+  if (id !== null && !Number.isSafeInteger(id)) return json({ error: 'Nieprawidłowe ID broni.' }, 400);
+  if (!env.DB) return json({ error: 'Biblioteka jest chwilowo niedostępna.' }, 503);
+  if (request.method === 'GET' && id === null) return json({ weapons: await listWeapons(env.DB) });
+  if (request.method === 'DELETE' && id !== null) {
+    const removed = await env.DB.prepare('DELETE FROM weapons WHERE id = ? RETURNING id').bind(id).first();
+    return removed ? new Response(null, { status: 204 }) : json({ error: 'Ta broń już nie istnieje.' }, 404);
+  }
+  if ((request.method === 'POST' && id === null) || (request.method === 'PUT' && id !== null)) {
+    let weapon;
+    try { weapon = validateWeapon(await request.json()); }
+    catch (error) { return json({ error: error instanceof SyntaxError ? 'Nieprawidłowy JSON.' : error.message }, 400); }
     try {
-      body = await request.json();
-    } catch (_) {
-      return json({ error: "Nieprawid\u0142owy JSON." }, 400);
-    }
-    try {
-      const weapon = validateWeapon(body);
-      return json({ weapon: await saveWeapon(env.DB, weapon) }, 201);
+      const saved = await saveWeapon(env.DB, weapon, id);
+      return saved ? json({ weapon: saved }, id === null ? 201 : 200) : json({ error: 'Ta broń już nie istnieje.' }, 404);
     } catch (error) {
-      return json({ error: error.message || "Nie uda\u0142o si\u0119 zapisa\u0107 broni." }, 400);
+      if (/UNIQUE constraint failed: weapons\.(name|name_key)/i.test(error.message + ' ' + (error.cause?.message || ''))) {
+        return json({ error: 'Broń o tej nazwie już istnieje. Wybierz inną nazwę lub edytuj zapisaną broń.' }, 409);
+      }
+      throw error;
     }
   }
-  return new Response(null, { status: 405, headers: { allow: "GET, POST" } });
+  return new Response(null, { status: 405, headers: { allow: id === null ? 'GET, POST' : 'PUT, DELETE' } });
 }
-__name(handleApi, "handleApi");
 var worker = {
   async fetch(request, env) {
     const url = new URL(request.url);

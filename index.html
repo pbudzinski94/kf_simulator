@@ -77,13 +77,18 @@
           <div class="legend-inline" aria-label="Legenda kości"><span class="dot red"></span> czerwona <span class="dot black"></span> czarna <span class="dot white"></span> biała</div>
         </div>
 
-        <div class="weapon-library-bar" aria-live="polite">
-          <div>
-            <strong>Biblioteka broni D1</strong>
-            <span id="weapon-library-status">Pobieranie zapisanych broni…</span>
+        <section class="panel library-panel" aria-labelledby="library-heading">
+          <div class="library-heading">
+            <div><h3 id="library-heading">Zbrojownia</h3><p>Zapisuj swój oręż i wybieraj bronie do porównania.</p></div>
+            <button id="add-weapon" class="button button-primary" type="button">+ Dodaj broń</button>
           </div>
-          <button id="refresh-weapons" class="button button-ghost" type="button">Odśwież bronie</button>
-        </div>
+          <div class="library-toolbar">
+            <label class="library-search"><span class="sr-only">Szukaj broni po nazwie</span><input id="weapon-search" type="search" placeholder="Szukaj broni po nazwie…" /></label>
+            <button id="refresh-weapons" class="button button-ghost" type="button">Odśwież</button>
+          </div>
+          <p id="weapon-library-status" class="library-status" role="status">Pobieranie zapisanych broni…</p>
+          <div id="weapon-library-list" class="library-list"></div>
+        </section>
 
         <div id="weapon-grid" class="weapon-grid"></div>
       </section>
@@ -126,12 +131,26 @@
 
     <footer class="shell footer">
       <span>Forlorn Forge</span>
-      <span id="app-version" aria-live="polite">Wersja… · Obliczenia lokalne · biblioteka broni w D1</span>
+      <span id="app-version" aria-live="polite">Wersja… · Obliczenia lokalne · biblioteka broni</span>
     </footer>
 
+    <dialog id="weapon-editor" class="weapon-dialog" aria-labelledby="editor-title">
+      <form id="weapon-form">
+        <div class="dialog-heading"><div><span class="kicker">Zbrojownia</span><h2 id="editor-title">Dodaj broń</h2></div><button class="button button-ghost" type="button" data-close-dialog aria-label="Zamknij formularz">✕</button></div>
+        <div id="editor-fields" class="editor-fields"></div>
+        <p id="editor-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button class="button button-ghost" type="button" data-close-dialog>Anuluj</button><button id="editor-submit" class="button button-primary" type="submit">Dodaj broń</button></div>
+      </form>
+    </dialog>
+    <dialog id="delete-dialog" class="weapon-dialog delete-dialog" aria-labelledby="delete-title">
+      <h2 id="delete-title">Usunąć broń?</h2><p id="delete-description"></p>
+      <p class="section-note">Broń zniknie ze wspólnej biblioteki. Obecne ustawienia porównania pozostaną dostępne.</p>
+      <p id="delete-error" class="form-error" role="alert"></p>
+      <div class="dialog-actions"><button class="button button-ghost" type="button" data-close-dialog>Anuluj</button><button id="confirm-delete" class="button button-danger" type="button">Usuń broń</button></div>
+    </dialog>
     <div id="tooltip" class="tooltip" role="tooltip"></div>
     <script src="js/dice.js?v=5"></script>
     <script src="js/engine.js?v=5"></script>
-    <script src="js/app.js?v=6"></script>
+    <script src="js/app.js?v=7"></script>
   </body>
 </html>

@@ -48,3 +48,13 @@ Bezpośrednie wdrożenie Cloudflare jest niezależne od istniejącej publikacji 
 Kod interfejsu i Workera odtworzono z wersji produkcyjnej 2026.09.04.1. Worker obsługuje API /api/weapons i korzysta z istniejącej bazy D1 przez binding DB. Plik database/schema.sql zawiera zrzut schematu do inicjalizacji pustej bazy lokalnej; nie uruchamiaj go na istniejącej bazie produkcyjnej.
 
 Lokalnie: wrangler d1 execute DB --local --file database/schema.sql, następnie wrangler dev. Produkcyjne dane pozostają w Cloudflare.
+
+## Zbrojownia: dodawanie, edycja i usuwanie
+
+Zbrojownia udostępnia wyszukiwanie, formularz dodawania i edycji oraz usuwanie z potwierdzeniem. Karty porównania pozwalają wczytać zapisany oręż albo dodać własny wariant. Zmiana parametrów w karcie pozostaje lokalnym wariantem, dopóki nie zostanie dodana do biblioteki.
+
+API: GET/POST /api/weapons, PUT/DELETE /api/weapons/:id. POST nie nadpisuje istniejącego wpisu. Konflikt nazwy zwraca 409. Nazwy są normalizowane przez NFKC, usunięcie skrajnych spacji, połączenie wielokrotnych białych znaków i zamianę liter na małe na potrzeby klucza. Unikalny indeks name_key chroni również przed równoczesnym zapisem.
+
+Dla istniejącej bazy: zastosuj jednorazowo migrations/0002_weapon_name_keys.sql, wyeksportuj SELECT id, name FROM weapons przez wrangler d1 execute DB --remote --json, wygeneruj SQL poleceniem node scripts/weapon-name-keys.cjs rows.json backfill.sql i wykonaj go na tej samej bazie. Generator przerwie pracę przy zduplikowanych nazwach. Nową lokalną bazę inicjalizuj wyłącznie przez database/schema.sql (zawiera już nową kolumnę i indeks). Nie wykonuj obu ścieżek na tej samej bazie.
+
+Testy wymagają Node.js >=22.13 i obejmują rzeczywiste ograniczenia SQLite, CRUD, walidację, duplikaty polskich nazw oraz równoczesne zapisy.

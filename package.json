@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "npm run build && node tests/engine.test.js && node tests/version-config.test.js",
+    "test": "npm run build && node tests/engine.test.js && node tests/version-config.test.js && node tests/weapons-api.test.mjs",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }

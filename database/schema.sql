@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "d1_migrations"(
 CREATE TABLE weapons (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  name_key TEXT,
   attack_dice INTEGER NOT NULL CHECK (attack_dice BETWEEN 0 AND 20),
   attack_bonus INTEGER NOT NULL CHECK (attack_bonus BETWEEN -20 AND 20),
   bonus_damage INTEGER NOT NULL CHECK (bonus_damage BETWEEN 0 AND 50),
@@ -22,3 +23,5 @@ CREATE TABLE weapons (
 );
 DELETE FROM sqlite_sequence;
 CREATE INDEX weapons_name_idx ON weapons(name COLLATE NOCASE);
+
+CREATE UNIQUE INDEX weapons_name_key_unique ON weapons(name_key);
