@@ -58,3 +58,15 @@ API: GET/POST /api/weapons, PUT/DELETE /api/weapons/:id. POST nie nadpisuje istn
 Dla istniejącej bazy: zastosuj jednorazowo migrations/0002_weapon_name_keys.sql, wyeksportuj SELECT id, name FROM weapons przez wrangler d1 execute DB --remote --json, wygeneruj SQL poleceniem node scripts/weapon-name-keys.cjs rows.json backfill.sql i wykonaj go na tej samej bazie. Generator przerwie pracę przy zduplikowanych nazwach. Nową lokalną bazę inicjalizuj wyłącznie przez database/schema.sql (zawiera już nową kolumnę i indeks). Nie wykonuj obu ścieżek na tej samej bazie.
 
 Testy wymagają Node.js >=22.13 i obejmują rzeczywiste ograniczenia SQLite, CRUD, walidację, duplikaty polskich nazw oraz równoczesne zapisy.
+
+## Kalkulator obrony
+
+Zakładka Obrona oblicza dokładny rozkład utraty Vigor z jednej zwykłej straty spowodowanej atakiem. Parametry: kości i próg Evasion, strata za trafienie i bonus przy co najmniej jednym trafieniu, premia Evasion, jeden wariant Dodge i Block, Guard, dostępne przerzuty Evasion i budżet Heat, łączna pula Armor/Reinforce, symbole ochrony (domyślnie Potential/Break, opcjonalnie Attack), Armor Re-rolls i Soak. Dane są zapisywane lokalnie w przeglądarce.
+
+Silnik js/defense-engine.js liczy dokładne prawdopodobieństwa, a js/defense-worker.js wykonuje pracę poza głównym wątkiem interfejsu. Guard przydzielany jest do najtańszych możliwych do uratowania porażek, przed jednocześnie zadeklarowanymi przerzutami. Naturalne 1/10 pozostają porażką/sukcesem. Block redukuje końcową liczbę trafień. Strategia Armor Re-rolls minimalizuje oczekiwaną utratę Vigor, następnie szansę dodatniej straty i liczbę przerzutów; może zachować już wystarczającą ochronę. Żadna kość nie jest przerzucana dwukrotnie.
+
+Sumę kości pancerza normalizuje się do limitów 7/4/3 i promocji nadmiaru. Wybrany rodzaj symboli dotyczy całego Armor Roll, także przerzutów; nie modelujemy warunkowego wyboru po rzucie ani mieszanego liczenia na poszczególnych kościach. Soak traktujemy jako dostępną redukcję po pancerzu, po opłaceniu kosztów poza kalkulatorem.
+
+Nie modelujemy Judgements, efektów Crit Evade/Crit Evade Fail, Conditions, Peril Checks, osobnego After Attack ani kosztów i ograniczeń konkretnych kart. Premie wpisuje się po rozstrzygnięciu dostępności źródeł i zasady jednej aktywnej broni defensywnej. Lesser Dodge zakłada brak innych premii, gdy pole Evasion bez Dodge wynosi 0; przypadki znoszących się bonusów wymagają ręcznej oceny.
+
+Test tests/defense.test.cjs niezależnie enumeruje rzuty k10 i wszystkie podzbiory Guard oraz fizyczne ścianki pancerza i wszystkie zestawy przerzutów. Sprawdza także skrajne wyniki, sumę prawdopodobieństw, naturalne 1/10, warianty Dodge/Block, bonus po trafieniu i limity kości.

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Kalkulator i symulator broni do Kingdoms Forlorn." />
-    <title>Forlorn Forge — kalkulator broni</title>
+    <title>Forlorn Forge — atak i obrona</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -16,13 +16,18 @@
       <div class="hero-row">
         <div>
           <h1>Forlorn <em>Forge</em></h1>
-          <p>Porównaj dwa oręża. Zobacz pełny rozkład obrażeń. Rzuć kośćmi, gdy los ma przemówić.</p>
+          <p>Porównaj oręż, zaplanuj obronę i zobacz pełny rozkład obrażeń.</p>
         </div>
         <button id="reset-all" class="button button-ghost" type="button">Przywróć przykład</button>
       </div>
     </header>
 
     <main class="shell">
+      <div class="mode-tabs" role="tablist" aria-label="Tryb kalkulatora">
+        <button id="attack-tab" class="mode-tab" role="tab" aria-selected="true" aria-controls="attack-panel" type="button">Atak</button>
+        <button id="defense-tab" class="mode-tab" role="tab" aria-selected="false" aria-controls="defense-panel" tabindex="-1" type="button">Obrona</button>
+      </div>
+      <div id="attack-panel" role="tabpanel" aria-labelledby="attack-tab">
       <section class="panel encounter-panel" aria-labelledby="encounter-heading">
         <div class="section-heading">
           <div>
@@ -127,6 +132,63 @@
           <p>Przerzuty ataku są używane na pudłach. Przerzuty Power i Black wybierają kości strategią maksymalizującą najpierw szansę rany, a potem średnie obrażenia. Wszystkie wybrane kości są deklarowane przed przerzutem. Nowy wynik jest obowiązkowy i żadna kość nie może być przerzucona drugi raz. Black zamienia najwyżej 1 Break z wyniku przerzuconej kości w bezpośredni DMG; pozostałe Breaki wymagają zwykłych żetonów Break.</p>
         </div>
       </details>
+      </div>
+      <div id="defense-panel" role="tabpanel" aria-labelledby="defense-tab" hidden>
+        <div class="section-heading defense-intro"><div><span class="kicker">Przetrwaj następny cios</span><h2>Jak mocno oberwiesz?</h2><p class="section-note">Rozkład utraty Vigor po unikach, pancerzu i Soak.</p></div><button id="reset-defense" class="button button-ghost" type="button">Przywróć przykład</button></div>
+        <form id="defense-form">
+          <section class="panel defense-section" aria-labelledby="incoming-heading">
+            <div class="section-heading compact"><div><span class="kicker">I · Zagrożenie</span><h3 id="incoming-heading">Atak potwora</h3></div></div>
+            <div class="defense-four">
+              <label class="field"><span>Kości Evasion (k10)</span><input name="evasionDice" type="number" required min="0" max="20" step="1" value="3" /></label>
+              <label class="field"><span>Próg uniku</span><input name="difficulty" type="number" required min="1" max="30" step="1" value="7" /></label>
+              <label class="field"><span>DMG za nieuniknięte trafienie</span><input name="damagePerHit" type="number" required min="0" max="50" step="1" value="2" /></label>
+              <label class="field"><span>Bonus DMG przy ≥1 trafieniu</span><input name="bonusDamage" type="number" required min="0" max="50" step="1" value="0" /></label>
+            </div>
+            <p class="section-note">Bonus wchodzi tylko wtedy, gdy po unikach i Block pozostaje przynajmniej jedno trafienie.</p>
+          </section>
+          <section class="panel defense-section" aria-labelledby="evade-heading">
+            <div class="section-heading compact"><div><span class="kicker">II · Unik</span><h3 id="evade-heading">Evasion Roll</h3></div></div>
+            <div class="defense-three">
+              <label class="field"><span>Premia Evasion bez Dodge</span><input name="evasionBonus" type="number" required min="-20" max="20" step="1" value="0" /></label>
+              <label class="field"><span>Dodge</span><select name="dodge"><option value="none">Brak</option><option value="lesser">Lesser Dodge · warunkowe +1</option><option value="1">Dodge · +1</option><option value="2">Advanced Dodge · +2</option><option value="3">Superior Dodge · +3</option></select></label>
+              <label class="field"><span>Block</span><select name="block"><option value="0">Brak</option><option value="1">Block · 1 trafienie</option><option value="2">Advanced Block · 2 trafienia</option><option value="3">Superior Block · 3 trafienia</option></select></label>
+              <label class="field"><span>Guard · punkty do rozdzielenia</span><input name="guard" type="number" required min="0" max="40" step="1" value="0" /></label>
+              <label class="field"><span>Dostępne Evasion Re-rolls</span><input name="rerolls" type="number" required min="0" max="20" step="1" value="0" /></label>
+              <label class="field"><span>Budżet przerzutów za Heat</span><input name="heatRerolls" type="number" required min="0" max="20" step="1" value="0" /></label>
+            </div>
+            <p id="defense-dodge-note" class="section-note"></p>
+            <p class="section-note">Guard poprawia wyniki przed przerzutami. Kości z Guard nie są przerzucane. Naturalne 1 zawsze przegrywa, 10 zawsze zdaje. Wpisz tylko dostępny budżet Heat.</p>
+          </section>
+          <section class="panel defense-section" aria-labelledby="armor-heading">
+            <div class="section-heading compact"><div><span class="kicker">III · Ochrona</span><h3 id="armor-heading">Armor Roll i Soak</h3></div></div>
+            <p class="section-note">Podaj łączną pulę z pancerza, aktywnej broni defensywnej, Reinforce i pozostałych dostępnych źródeł.</p>
+            <div class="defense-three armor-dice-inputs">
+              <label class="die-field die-red"><span>Czerwone kości Armor</span><input name="armorRed" type="number" required min="0" max="20" step="1" value="1" /></label>
+              <label class="die-field die-black"><span>Czarne kości Armor</span><input name="armorBlack" type="number" required min="0" max="20" step="1" value="0" /></label>
+              <label class="die-field die-white"><span>Białe kości Armor</span><input name="armorWhite" type="number" required min="0" max="20" step="1" value="0" /></label>
+            </div>
+            <div class="defense-three">
+              <label class="field"><span>Symbole chroniące w Armor Roll</span><select name="armorSymbols"><option value="break">Potential / Break · standard</option><option value="power">Attack / mieczyki · efekt karty</option></select></label>
+              <label class="field"><span>Armor Re-rolls</span><input name="armorRerolls" type="number" required min="0" max="40" step="1" value="0" /></label>
+              <label class="field"><span>Soak · redukcja po Armor Roll</span><input name="soak" type="number" required min="0" max="100" step="1" value="0" /></label>
+            </div>
+            <p id="defense-armor-note" class="section-note"></p>
+            <p class="section-note">Wybrany symbol obowiązuje w całym rzucie. Trybu „mieczyki” używaj tylko z odpowiednim efektem karty. Przerzuty Armor nie korzystają z Heat. Soak zakłada, że możesz opłacić jego koszt.</p>
+          </section>
+        </form>
+        <section class="panel defense-section" aria-labelledby="defense-result-heading" aria-busy="false" id="defense-results">
+          <div class="section-heading compact"><div><span class="kicker">IV · Wynik</span><h3 id="defense-result-heading">Ile Vigor stracisz?</h3></div><span id="defense-calculation-status" class="calculation-badge" role="status">wynik dokładny</span></div>
+          <p id="defense-error" class="form-error" role="alert"></p>
+          <div id="defense-output"><div id="defense-metrics" class="defense-metrics"></div><div id="defense-secondary" class="result-secondary"></div><div id="defense-chart" class="defense-chart" role="img" aria-label="Rozkład utraty Vigor"></div></div>
+        </section>
+        <details class="panel rules-panel"><summary>Założenia i kolejność obrony</summary><div class="formula">
+          <p>Evasion i Dodge → rzut → Guard → zadeklarowane przerzuty → pozostałe trafienia po Block → utrata Vigor → Armor i jego przerzuty → Soak.</p>
+          <p>Dobór obrony minimalizuje oczekiwaną utratę Vigor. Armor Re-rolls przy remisie minimalizują szansę otrzymania obrażeń, a potem liczbę przerzutów. Wszystkie kości do przerzutu wybierane są jednocześnie i każda może być przerzucona tylko raz.</p>
+          <p>Block uwzględniamy jako stałą liczbę trafień traktowanych jako uniknięte, bez dodatkowych efektów karty. Dodge i Block nie kumulują wariantów. Lesser Dodge działa tylko bez innej premii Evasion; przy wzajemnie znoszących się bonusach wybierz wariant ręcznie zgodnie z kartą.</p>
+          <p>Limity puli to 7 czerwonych, 4 czarne i 3 białe kości. Nadmiar promujemy: dwie kości niższego koloru zastępuje jedna wyższego; nadmiar białych daje stałą ochronę z odpowiednich symboli.</p>
+          <p>Model dotyczy jednej zwykłej straty Vigor z ataku. Nie obejmuje Judgements, efektów Crit Evade / Crit Evade Fail, Conditions, Peril Checks ani osobnych obrażeń After Attack. Zero utraty Vigor nie oznacza uniknięcia wszystkich efektów karty.</p>
+        </div></details>
+      </div>
     </main>
 
     <footer class="shell footer">
@@ -152,5 +214,6 @@
     <script src="js/dice.js?v=5"></script>
     <script src="js/engine.js?v=5"></script>
     <script src="js/app.js?v=7"></script>
+    <script src="js/defense.js?v=1"></script>
   </body>
 </html>
