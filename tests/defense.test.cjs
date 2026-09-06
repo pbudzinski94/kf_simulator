@@ -15,7 +15,7 @@ assert.equal(simulate({...base,block:1,bonusDamage:10},()=>0).damage,0);
 assert.equal(simulate({...base,evasionDice:0},sequence([])).armorDice.length,0);
 let seed=123456;
 const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-for(const mode of ['break','power']) {
+for(const mode of ['break','power','best']) {
   const config={...base,evasionDice:3,guard:2,rerolls:1,heatRerolls:1,bonusDamage:2,armor:{red:1,black:1,white:0},armorRerolls:1,armorSymbols:mode,soak:1};
   const exact=calculate(config);let total=0,zeros=0;
   for(let i=0;i<12000;i++) {
@@ -82,7 +82,8 @@ function bruteArmor(colors,mode,rerolls,loss,soak) {
       let m=0,z=0;
       enumerateRolls(chosen.length,6,again=>{
         const values=[...roll];chosen.forEach((index,i)=>values[index]=again[i]);
-        const armor=values.reduce((sum,face,i)=>sum+KF.POWER_DICE[colors[i]][face-1][mode],0);
+        const sum=symbol=>values.reduce((total,face,i)=>total+KF.POWER_DICE[colors[i]][face-1][symbol],0);
+        const armor=mode==='best'?Math.max(sum('break'),sum('power')):sum(mode);
         const dmg=Math.max(0,loss-soak-armor),p=1/6**chosen.length;m+=dmg*p;if(dmg===0)z+=p;
       });
       if(m<bestMean-1e-12 || (Math.abs(m-bestMean)<1e-12 && (z>bestZero+1e-12 || (Math.abs(z-bestZero)<1e-12 && chosen.length<bestN)))){bestMean=m;bestZero=z;bestN=chosen.length;}
@@ -91,7 +92,7 @@ function bruteArmor(colors,mode,rerolls,loss,soak) {
   });
   return {mean,zero};
 }
-for(const mode of ['break','power'])for(const loss of [1,3,6])for(const rerolls of [0,1,2]) {
+for(const mode of ['break','power','best'])for(const loss of [1,3,6])for(const rerolls of [0,1,2]) {
   const c={...base,armor:{red:1,black:1,white:0},armorSymbols:mode,armorRerolls:rerolls,soak:1};
   const actual=armorModel(c).lossDistribution(loss), expected=bruteArmor(['red','black'],mode,rerolls,loss,1);
   near([...actual].reduce((s,[d,p])=>s+d*p,0),expected.mean,'armor expected loss');near(actual.get(0)||0,expected.zero,'armor zero probability');
@@ -100,4 +101,9 @@ for(const config of [base,{...base,evasionDice:8,guard:10,rerolls:3,block:2,armo
   const r=calculate(config);near(r.damageDistribution.reduce((s,x)=>s+x.probability,0),1);
   assert.ok(r.minDamage>=0);assert.ok(r.expectedDamage>=r.minDamage-1e-9 && r.expectedDamage<=r.maxDamage+1e-9);
 }
-console.log('Defense tests passed: exact distributions, independent exhaustive Guard/Armor checks, natural 1/10, Block, Dodge, Soak, dice limits and validation.');
+// Two red dice: 2 Attack and 1 Break protect for 2, not the per-die maximum 3.
+const whole=simulate({...base,damagePerHit:5,armor:{red:2,black:0,white:0},armorSymbols:'best'},sequence([0,.2,.4]));
+assert.equal(whole.protection,2);assert.equal(whole.damage,3);assert.equal(whole.chosenSymbols,'power');
+const cups=simulate({...base,damagePerHit:5,armor:{red:2,black:0,white:0},armorSymbols:'best'},sequence([0,.4,.4]));
+assert.equal(cups.protection,2);assert.equal(cups.chosenSymbols,'break');
+console.log('Defense tests passed, including whole-roll best symbols, exhaustive reroll choices and seeded simulation comparisons.');

@@ -168,12 +168,12 @@
               <label class="die-field die-white"><span>Białe kości Armor</span><input name="armorWhite" type="number" required min="0" max="20" step="1" value="0" /></label>
             </div>
             <div class="defense-three">
-              <label class="field"><span>Symbole chroniące w Armor Roll</span><select name="armorSymbols"><option value="break">Potential / Break · standard</option><option value="power">Attack / mieczyki · efekt karty</option></select></label>
+              <label class="field"><span>Symbole chroniące w Armor Roll</span><select name="armorSymbols"><option value="break">Potential / Break · standard</option><option value="power">Attack / mieczyki · efekt karty</option><option value="best">Zawsze lepsze · cały rzut</option></select></label>
               <label class="field"><span>Armor Re-rolls</span><input name="armorRerolls" type="number" required min="0" max="40" step="1" value="0" /></label>
               <label class="field"><span>Soak · redukcja po Armor Roll</span><input name="soak" type="number" required min="0" max="100" step="1" value="0" /></label>
             </div>
             <p id="defense-armor-note" class="section-note"></p>
-            <p class="section-note">Wybrany symbol obowiązuje w całym rzucie. Trybu „mieczyki” używaj tylko z odpowiednim efektem karty. Przerzuty Armor nie korzystają z Heat. Soak zakłada, że możesz opłacić jego koszt.</p>
+            <p class="section-note">Wybrany symbol obowiązuje w całym rzucie. „Zawsze lepsze” porównuje sumę Break i Attack po przerzutach i wybiera większą. Trybu „mieczyki” używaj tylko z odpowiednim efektem karty. Przerzuty Armor nie korzystają z Heat. Soak zakłada, że możesz opłacić jego koszt.</p>
           </section>
         </form>
         <section class="panel defense-section" aria-labelledby="defense-result-heading" aria-busy="false" id="defense-results">
@@ -219,6 +219,6 @@
     <script src="js/dice.js?v=5"></script>
     <script src="js/engine.js?v=5"></script>
     <script src="js/app.js?v=7"></script>
-    <script src="js/defense.js?v=2"></script>
+    <script src="js/defense.js?v=3"></script>
   </body>
 </html>

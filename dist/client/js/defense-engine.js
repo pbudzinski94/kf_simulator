@@ -17,7 +17,7 @@
     ]) integer(c[key], label, min, max);
     if (!['none','lesser','1','2','3'].includes(c.dodge)) throw new Error('Nieprawidłowy wariant Dodge.');
     integer(c.block, 'Block', 0, 3);
-    if (!['break','power'].includes(c.armorSymbols)) throw new Error('Nieprawidłowe symbole pancerza.');
+    if (!['break','power','best'].includes(c.armorSymbols)) throw new Error('Nieprawidłowe symbole pancerza.');
     for (const color of COLORS) integer(c.armor[color], 'Kości pancerza', 0, 20);
     return c;
   }
@@ -116,6 +116,7 @@
     });
   }
   function armorModel(c) {
+    if(c.armorSymbols==='best')return bestArmorModel(c);
     const normalized=normalizeArmor(c.armor);
     const counts=COLORS.map(color=>normalized.counts[color]);
     const faces=COLORS.map(color=>scalarFaces(color,c.armorSymbols));
@@ -189,6 +190,87 @@
       }
     };
   }
+  // Keep both symbol totals jointly: their correlation on each face matters.
+  function bestArmorModel(c) {
+    const normalized=normalizeArmor(c.armor), jointCache=new Map(),scoreCache=new Map();
+    function joint(counts) {
+      const key=counts.join(',');if(jointCache.has(key))return jointCache.get(key);
+      let states=new Map([[0,1]]);
+      counts.forEach((n,i)=>{for(let d=0;d<n;d++){
+        const next=new Map();
+        for(const [sum,p] of states) for(const f of root.KF.POWER_DICE[COLORS[i]])add(next,sum+f.break*128+f.power,p/6);
+        states=next;
+      }});
+      const result=[...states].map(([sum,p])=>({b:Math.floor(sum/128),a:sum%128,p}));
+      jointCache.set(key,result);return result;
+    }
+    function options(dice) {
+      let states=new Map([['0,0,0',{n:0,b:0,a:0,indices:[]}]]);
+      dice.forEach(d=>{
+        const next=new Map(states);
+        for(const s of states.values())if(s.n<c.armorRerolls){
+          const n=s.n+1,b=s.b+d.face.break,a=s.a+d.face.power;
+          next.set(`${n},${b},${a}`,{n,b,a,indices:[...s.indices,d.index]});
+        }
+        states=next;
+      });
+      const all=[...states.values()];
+      // For equal reroll counts, retaining at least as many of both symbols dominates.
+      return all.filter(s=>!all.some(t=>t.n===s.n&&t.b<=s.b&&t.a<=s.a&&(t.b<s.b||t.a<s.a)));
+    }
+    function choose(dice,loss) {
+      const b=dice.reduce((s,d)=>s+d.face.break,0),a=dice.reduce((s,d)=>s+d.face.power,0);
+      const target=loss-c.soak-normalized.fixed;
+      let best={indices:[],counts:[0,0,0],b,a,mean:Math.max(0,target-Math.max(b,a)),risk:target>Math.max(b,a)?1:0};
+      if(best.mean===0||!c.armorRerolls)return best;
+      const groups=COLORS.map(color=>options(dice.map((d,index)=>({...d,index})).filter(d=>d.color===color)));
+      for(const r of groups[0])for(const k of groups[1])for(const w of groups[2]) {
+        const n=r.n+k.n+w.n;if(n>c.armorRerolls)continue;
+        const rb=b-r.b-k.b-w.b,ra=a-r.a-k.a-w.a,counts=[r.n,k.n,w.n];
+        const key=`${target-rb},${target-ra},${counts}`;
+        let score=scoreCache.get(key);
+        if(!score){
+          let mean=0,risk=0;
+          for(const x of joint(counts)){const damage=Math.max(0,target-Math.max(rb+x.b,ra+x.a));mean+=damage*x.p;if(damage>0)risk+=x.p;}
+          score={mean,risk};scoreCache.set(key,score);
+        }
+        if(score.mean<best.mean-EPS||(Math.abs(score.mean-best.mean)<=EPS&&(score.risk<best.risk-EPS||(Math.abs(score.risk-best.risk)<=EPS&&n<best.indices.length)))) {
+          best={indices:[...r.indices,...k.indices,...w.indices],counts,b:rb,a:ra,...score};
+        }
+      }
+      return best;
+    }
+    function initialColor(color,n) {
+      let states=new Map([['',1]]);
+      for(let i=0;i<n;i++){
+        const next=new Map();
+        for(const [key,p] of states)for(const f of root.KF.POWER_DICE[color]){
+          const values=key?key.split(',').map(Number):[];
+          values.push(f.break*128+f.power);values.sort((a,b)=>a-b);add(next,values.join(','),p/6);
+        }
+        states=next;
+      }
+      return [...states].map(([key,p])=>({p,dice:key?key.split(',').map(Number).map(x=>({color,face:{break:Math.floor(x/128),power:x%128}})):[]}));
+    }
+    let groups;
+    return {...normalized,
+      chooseDice:(dice,loss)=>choose(dice,loss).indices,
+      lossDistribution(loss) {
+        const out=new Map(),target=loss-c.soak-normalized.fixed;
+        if(target<=0)return new Map([[0,1]]);
+        if(!c.armorRerolls){
+          for(const x of joint(COLORS.map(color=>normalized.counts[color])))add(out,Math.max(0,target-Math.max(x.b,x.a)),x.p);
+          return out;
+        }
+        groups??=COLORS.map(color=>initialColor(color,normalized.counts[color]));
+        for(const r of groups[0])for(const k of groups[1])for(const w of groups[2]){
+          const best=choose([...r.dice,...k.dice,...w.dice],loss),weight=r.p*k.p*w.p;
+          for(const x of joint(best.counts))add(out,Math.max(0,target-Math.max(best.b+x.b,best.a+x.a)),weight*x.p);
+        }
+        return out;
+      }
+    };
+  }
   function simulate(input, random=Math.random) {
     const c=normalize(input);
     const dodge=c.dodge==='lesser' ? (c.evasionBonus===0?1:0) : Number(c.dodge)||0;
@@ -219,11 +301,19 @@
     }
     const sorted=COLORS.map(color=>armorDice.filter(x=>x.color===color).sort((a,b)=>a.face[c.armorSymbols]-b.face[c.armorSymbols]));
     const summaries=sorted.map(dice=>{const prefix=[0];dice.forEach(x=>prefix.push(prefix.at(-1)+x.face[c.armorSymbols]));return {prefix,total:prefix.at(-1)};});
-    const selected=rawDamage>0 ? armor.choose(summaries,rawDamage) : [0,0,0];
-    sorted.forEach((dice,i)=>dice.slice(0,selected[i]).forEach(die=>{die.face=face(die.color);die.rerolled=true;}));
-    const protection=rawDamage>0 ? armor.fixed+armorDice.reduce((sum,x)=>sum+x.face[c.armorSymbols],0) : 0;
+    if(c.armorSymbols==='best') {
+      const selected=rawDamage>0 ? armor.chooseDice(armorDice,rawDamage) : [];
+      selected.forEach(i=>{const die=armorDice[i];die.face=face(die.color);die.rerolled=true;});
+    } else {
+      const selected=rawDamage>0 ? armor.choose(summaries,rawDamage) : [0,0,0];
+      sorted.forEach((dice,i)=>dice.slice(0,selected[i]).forEach(die=>{die.face=face(die.color);die.rerolled=true;}));
+    }
+    const totals={break:0,power:0};
+    armorDice.forEach(x=>{totals.break+=x.face.break;totals.power+=x.face.power;});
+    const chosenSymbols=c.armorSymbols==='best' ? (totals.power>totals.break?'power':'break') : c.armorSymbols;
+    const protection=rawDamage>0 ? armor.fixed+totals[chosenSymbols] : 0;
     const afterArmor=Math.max(0,rawDamage-protection),soaked=Math.min(afterArmor,c.soak);
-    return {config:c,modifier,dodge,evasion,guardUsed:c.guard-guard,rerollsUsed:c.rerolls-free,heatUsed:c.heatRerolls-heat,blocked,hits,rawDamage,armorDice,fixedArmor:rawDamage>0?armor.fixed:0,protection,afterArmor,soaked,damage:afterArmor-soaked};
+    return {config:c,modifier,dodge,evasion,guardUsed:c.guard-guard,rerollsUsed:c.rerolls-free,heatUsed:c.heatRerolls-heat,blocked,hits,rawDamage,armorDice,totals,chosenSymbols,fixedArmor:rawDamage>0?armor.fixed:0,protection,afterArmor,soaked,damage:afterArmor-soaked};
   }
   function calculate(input) {
     const c=normalize(input);
