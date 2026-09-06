@@ -77,6 +77,14 @@
           <div class="legend-inline" aria-label="Legenda kości"><span class="dot red"></span> czerwona <span class="dot black"></span> czarna <span class="dot white"></span> biała</div>
         </div>
 
+        <div class="weapon-library-bar" aria-live="polite">
+          <div>
+            <strong>Biblioteka broni D1</strong>
+            <span id="weapon-library-status">Pobieranie zapisanych broni…</span>
+          </div>
+          <button id="refresh-weapons" class="button button-ghost" type="button">Odśwież bronie</button>
+        </div>
+
         <div id="weapon-grid" class="weapon-grid"></div>
       </section>
 
@@ -118,7 +126,7 @@
 
     <footer class="shell footer">
       <span>Forlorn Forge</span>
-      <span id="app-version" aria-live="polite">Wersja… · Obliczenia lokalne · bez wysyłania danych</span>
+      <span id="app-version" aria-live="polite">Wersja… · Obliczenia lokalne · biblioteka broni w D1</span>
     </footer>
 
     <div id="tooltip" class="tooltip" role="tooltip"></div>

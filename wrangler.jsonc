@@ -6,5 +6,12 @@
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS"
-  }
+  },
+  "d1_databases": [
+    {
+      "database_id": "89ad9ae3-cc27-4c7d-8b72-bcf81f65f698",
+      "binding": "DB",
+      "database_name": "89ad9ae3-cc27-4c7d-8b72-bcf81f65f698"
+    }
+  ]
 }

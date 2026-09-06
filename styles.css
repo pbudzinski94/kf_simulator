@@ -40,7 +40,7 @@ body {
   line-height: 1.5;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { color: inherit; }
 
 .ambient {
@@ -110,7 +110,7 @@ main { padding: 34px 0 72px; }
 
 .field, .die-field { display: grid; gap: 7px; color: #c8c8be; font-size: 12px; font-weight: 600; }
 .field > span { display: flex; align-items: center; gap: 6px; }
-input {
+input, select {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -121,7 +121,8 @@ input {
   padding: 9px 11px;
   transition: border-color .18s, box-shadow .18s;
 }
-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(198,168,106,.1); }
+input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(198,168,106,.1); }
+select { cursor: pointer; }
 .hint {
   width: 18px;
   height: 18px;
@@ -149,9 +150,15 @@ input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(198,168,106,
 .dot { margin: 0 2px 0 8px; width: 8px; height: 8px; }
 
 .weapon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.weapon-library-bar { margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--line); background: rgba(0,0,0,.15); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.weapon-library-bar strong { display: block; color: #d5d1c4; font-size: 12px; }
+.weapon-library-bar span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+.weapon-library-bar span.success { color: var(--green); }
+.weapon-library-bar span.error { color: var(--danger); }
 .weapon-card { overflow: hidden; }
 .weapon-card::before { background: linear-gradient(90deg, var(--weapon-accent), transparent); }
 .weapon-header { padding: 22px 24px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+.weapon-title-fields { min-width: 0; flex: 1; display: grid; gap: 7px; }
 .weapon-index {
   display: grid;
   place-items: center;
@@ -163,6 +170,9 @@ input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(198,168,106,
 }
 .weapon-name { min-height: 38px; border: 0; border-bottom: 1px solid transparent; padding: 4px 0; background: transparent; font-family: Cinzel, serif; font-size: 20px; }
 .weapon-name:focus { box-shadow: none; border-bottom-color: var(--gold); }
+.weapon-select { min-height: 34px; padding-block: 5px; color: var(--muted); font-size: 11px; }
+.button-save { flex: 0 0 auto; background: rgba(198,168,106,.1); border-color: rgba(198,168,106,.5); color: var(--gold-bright); }
+.button:disabled { cursor: wait; opacity: .55; transform: none; }
 .weapon-content { padding: 20px 24px 24px; }
 .subheading { margin: 0 0 12px; color: var(--gold); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; }
 .fields-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -243,10 +253,15 @@ input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(198,168,106,
   .hero { padding-top: 36px; }
   .hero-row, .section-heading { align-items: flex-start; flex-direction: column; }
   .hero-row .button { width: 100%; }
+  .weapon-library-bar { align-items: stretch; flex-direction: column; }
+  .weapon-library-bar .button { width: 100%; }
   .encounter-panel, .verdict-panel, .simulator-panel { padding: 18px; }
   .monster-fields, .portrait-fields { grid-template-columns: 1fr; }
   .pool-grid { grid-template-columns: 1fr 1fr; }
   .weapon-content { padding-inline: 18px; }
+  .weapon-header { align-items: stretch; flex-wrap: wrap; padding-inline: 18px; }
+  .weapon-title-fields { flex-basis: calc(100% - 48px); }
+  .button-save { width: 100%; }
   .result-strip { margin-inline: -18px; padding-inline: 18px; }
   .result-primary { grid-template-columns: 1fr 1fr; }
   .metric.main { grid-column: 1 / -1; }

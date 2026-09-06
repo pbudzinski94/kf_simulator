@@ -42,3 +42,9 @@ Repozytorium zawiera `wrangler.jsonc` dla osobnego Workera `forlorn-forge-github
 - non-production deploy command: `npx wrangler versions upload`.
 
 Bezpośrednie wdrożenie Cloudflare jest niezależne od istniejącej publikacji Sites pod adresem `chatgpt.site`.
+
+## Odzyskane wdrożenie Cloudflare
+
+Kod interfejsu i Workera odtworzono z wersji produkcyjnej 2026.09.04.1. Worker obsługuje API /api/weapons i korzysta z istniejącej bazy D1 przez binding DB. Plik database/schema.sql zawiera zrzut schematu do inicjalizacji pustej bazy lokalnej; nie uruchamiaj go na istniejącej bazie produkcyjnej.
+
+Lokalnie: wrangler d1 execute DB --local --file database/schema.sql, następnie wrangler dev. Produkcyjne dane pozostają w Cloudflare.

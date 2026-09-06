@@ -27,6 +27,7 @@
 
   let state = loadState();
   let results = [];
+  let savedWeapons = [];
 
   const $ = selector => document.querySelector(selector);
   const pct = value => `${(value * 100).toFixed(value > 0 && value < .01 ? 2 : 1)}%`;
@@ -42,9 +43,9 @@
       const config = await response.json();
       const version = String(config.version || '').trim();
       if (!version) throw new Error('Missing app version');
-      target.textContent = `Wersja ${version} · Obliczenia lokalne · bez wysyłania danych`;
+      target.textContent = `Wersja ${version} · Obliczenia lokalne · biblioteka broni w D1`;
     } catch (_) {
-      target.textContent = 'Wersja lokalna · Obliczenia lokalne · bez wysyłania danych';
+      target.textContent = 'Wersja lokalna · Obliczenia lokalne · biblioteka broni w D1';
     }
   }
 
@@ -80,7 +81,13 @@
       <article class="panel weapon-card" data-weapon="${index}" style="--weapon-accent:${accent}">
         <div class="weapon-header">
           <span class="weapon-index">${index + 1}</span>
-          <input class="weapon-name" data-bind="name" aria-label="Nazwa broni ${index + 1}" value="${escapeHtml(weapon.name)}" />
+          <div class="weapon-title-fields">
+            <input class="weapon-name" data-bind="name" aria-label="Nazwa broni ${index + 1}" value="${escapeHtml(weapon.name)}" />
+            <select class="weapon-select" data-load-weapon aria-label="Wczytaj zapisaną broń do pola ${index + 1}">
+              ${weaponOptions()}
+            </select>
+          </div>
+          <button class="button button-save" data-save-weapon type="button">Zapisz broń</button>
         </div>
         <div class="weapon-content">
           <p class="subheading">Attack Roll · kości k10</p>
@@ -107,8 +114,89 @@
     return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   }
 
+  function weaponOptions() {
+    const options = savedWeapons.map(weapon => `<option value="${weapon.id}">${escapeHtml(weapon.name)}</option>`).join('');
+    return `<option value="">Wczytaj z biblioteki…</option>${options}`;
+  }
+
   function renderWeapons() {
     $('#weapon-grid').innerHTML = state.weapons.map(weaponTemplate).join('');
+  }
+
+  function setLibraryStatus(message, type = '') {
+    const target = $('#weapon-library-status');
+    target.textContent = message;
+    target.className = type;
+  }
+
+  function refreshWeaponSelects() {
+    document.querySelectorAll('[data-load-weapon]').forEach(select => {
+      select.innerHTML = weaponOptions();
+    });
+  }
+
+  async function loadWeaponLibrary(showSuccess = false) {
+    const refreshButton = $('#refresh-weapons');
+    refreshButton.disabled = true;
+    setLibraryStatus('Pobieranie zapisanych broni…');
+    try {
+      const response = await fetch('/api/weapons', { cache: 'no-store' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      savedWeapons = Array.isArray(data.weapons) ? data.weapons : [];
+      refreshWeaponSelects();
+      const message = savedWeapons.length
+        ? `${savedWeapons.length} ${savedWeapons.length === 1 ? 'zapisana broń' : 'zapisanych broni'}${showSuccess ? ' · lista odświeżona' : ''}`
+        : 'Biblioteka jest pusta — skonfiguruj broń i zapisz ją poniżej.';
+      setLibraryStatus(message, 'success');
+    } catch (error) {
+      setLibraryStatus(`Nie udało się pobrać biblioteki: ${error.message}`, 'error');
+    } finally {
+      refreshButton.disabled = false;
+    }
+  }
+
+  async function saveWeapon(index, button) {
+    const weapon = state.weapons[index];
+    if (!weapon.name.trim()) {
+      setLibraryStatus('Podaj nazwę broni przed zapisem.', 'error');
+      return;
+    }
+    button.disabled = true;
+    button.textContent = 'Zapisywanie…';
+    setLibraryStatus(`Zapisywanie „${weapon.name.trim()}”…`);
+    try {
+      const response = await fetch('/api/weapons', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(weapon)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      await loadWeaponLibrary();
+      setLibraryStatus(`Zapisano „${data.weapon.name}”.`, 'success');
+    } catch (error) {
+      setLibraryStatus(`Nie udało się zapisać broni: ${error.message}`, 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Zapisz broń';
+    }
+  }
+
+  function loadSavedWeapon(index, id) {
+    const saved = savedWeapons.find(weapon => String(weapon.id) === String(id));
+    if (!saved) return;
+    state.weapons[index] = {
+      name: saved.name,
+      attackDice: saved.attackDice,
+      attackBonus: saved.attackBonus,
+      bonusDamage: saved.bonusDamage,
+      perHit: deepClone(saved.perHit),
+      extraDice: deepClone(saved.extraDice)
+    };
+    renderWeapons();
+    recalculate();
+    setLibraryStatus(`Wczytano „${saved.name}” do pola ${index + 1}.`, 'success');
   }
 
   function bindInitialValues() {
@@ -230,6 +318,14 @@
     recalculate();
   }
 
+  function handleWeaponActions(event) {
+    const card = event.target.closest('[data-weapon]');
+    if (!card) return;
+    const index = Number(card.dataset.weapon);
+    if (event.target.matches('[data-save-weapon]')) saveWeapon(index, event.target);
+    if (event.type === 'change' && event.target.matches('[data-load-weapon]')) loadSavedWeapon(index, event.target.value);
+  }
+
   function initTooltips() {
     const tooltip = $('#tooltip');
     document.addEventListener('pointerover', event => {
@@ -255,10 +351,14 @@
 
   renderWeapons();
   loadAppVersion();
+  loadWeaponLibrary();
   bindInitialValues();
   recalculate();
   initTooltips();
   document.addEventListener('input', handleInput);
+  document.addEventListener('click', handleWeaponActions);
+  document.addEventListener('change', handleWeaponActions);
+  $('#refresh-weapons').addEventListener('click', () => loadWeaponLibrary(true));
   $('#roll-both').addEventListener('click', rollBoth);
   $('#reset-all').addEventListener('click', resetAll);
 })();
