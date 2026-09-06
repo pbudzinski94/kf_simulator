@@ -181,6 +181,11 @@
           <p id="defense-error" class="form-error" role="alert"></p>
           <div id="defense-output"><div id="defense-metrics" class="defense-metrics"></div><div id="defense-secondary" class="result-secondary"></div><div id="defense-chart" class="defense-chart" role="img" aria-label="Rozkład utraty Vigor"></div></div>
         </section>
+        <section class="panel simulator-panel" aria-labelledby="defense-simulator-heading">
+          <div class="section-heading"><div><span class="kicker">V · Rzut kośćmi</span><h2 id="defense-simulator-heading">Symulator pojedynczej obrony</h2></div><button id="roll-defense" class="button button-primary" type="button">Rzuć obronę</button></div>
+          <p class="section-note">Rzut korzysta z parametrów powyżej. Pokazuje kości, użyte efekty i redukcję obrażeń krok po kroku.</p>
+          <div id="defense-simulation" aria-live="polite"><p class="empty-state">Rzuć kośćmi, aby sprawdzić pojedynczą obronę.</p></div>
+        </section>
         <details class="panel rules-panel"><summary>Założenia i kolejność obrony</summary><div class="formula">
           <p>Evasion i Dodge → rzut → Guard → zadeklarowane przerzuty → pozostałe trafienia po Block → utrata Vigor → Armor i jego przerzuty → Soak.</p>
           <p>Dobór obrony minimalizuje oczekiwaną utratę Vigor. Armor Re-rolls przy remisie minimalizują szansę otrzymania obrażeń, a potem liczbę przerzutów. Wszystkie kości do przerzutu wybierane są jednocześnie i każda może być przerzucona tylko raz.</p>
@@ -214,6 +219,6 @@
     <script src="js/dice.js?v=5"></script>
     <script src="js/engine.js?v=5"></script>
     <script src="js/app.js?v=7"></script>
-    <script src="js/defense.js?v=1"></script>
+    <script src="js/defense.js?v=2"></script>
   </body>
 </html>

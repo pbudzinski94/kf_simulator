@@ -5,6 +5,40 @@
   const defaults = Object.fromEntries(new FormData(form));
   const key = 'forlorn-forge-defense-v1';
   let worker, requestId = 0, timer;
+  let simulationWorker;
+  const simulation=$('#defense-simulation');
+  const rollButton=$('#roll-defense');
+  function clearSimulation() {
+    simulationWorker?.terminate();simulationWorker=null;rollButton.disabled=false;
+    simulation.innerHTML='<p class="empty-state">Rzuć kośćmi dla aktualnych parametrów obrony.</p>';
+  }
+  function renderSimulation(s) {
+    const c=s.config;
+    const dodgeNames={none:'brak',lesser:'Lesser',1:'podstawowy',2:'Advanced',3:'Superior'};
+    const symbols=f=>`Break ${f.break} · Attack ${f.power} · Hope ${f.hope}`;
+    simulation.innerHTML=`<article class="roll-card">
+      <h3>Obrona <span class="roll-outcome ${s.damage?'miss':''}">${s.hits===0?'Full Evade':s.damage?'Utrata Vigor':'Pancerz / Soak'}</span></h3>
+      <p class="section-note">${c.evasionDice}k10 · próg ${c.difficulty} · DMG/trafienie ${c.damagePerHit} · bonus DMG ${c.bonusDamage}<br>Premia Evasion ${c.evasionBonus} · Dodge ${dodgeNames[c.dodge]} (efekt +${s.dodge}) · Block ${c.block} · Guard ${c.guard} · przerzuty ${c.rerolls} + Heat ${c.heatRerolls}<br>Armor: ${c.armor.red} czerwonych / ${c.armor.black} czarnych / ${c.armor.white} białych · ${c.armorSymbols==='break'?'Break':'Attack'} · przerzuty Armor ${c.armorRerolls} · Soak ${c.soak}</p>
+      <div class="roll-line"><span>Evasion · premia ${s.modifier>=0?'+':''}${s.modifier}</span><div class="dice-list">${s.evasion.map(d=>`<span class="rolled-die ${d.evaded?'hit':'miss'}" title="${d.evaded?'Unik':'Nieudany unik'}">${d.reroll?`${d.initial} → `:''}${d.roll}${d.guard?`<small>Guard +${d.guard}</small>`:''}${d.reroll?`<small>↻ ${d.reroll}</small>`:''}</span>`).join('')||'Brak kości'}</div></div>
+      <p class="section-note">Użyto Guard: ${s.guardUsed} · przerzutów Evasion: ${s.rerollsUsed} · przerzutów Heat: ${s.heatUsed}<br>Block zatrzymał ${s.blocked} traf. · pozostało ${s.hits} traf. → ${s.rawDamage} DMG przed pancerzem</p>
+      <div class="roll-line"><span>Armor · ${c.armorSymbols==='break'?'Break':'Attack'}</span><div class="dice-list">${s.armorDice.map(d=>`<span class="power-chip ${d.color}">${d.rerolled?`<small>${symbols(d.initial)} → ↻ </small>`:''}${symbols(d.face)}</span>`).join('')||'<span class="power-chip">Bez rzutu Armor</span>'}</div></div>
+      <p class="section-note">Ochrona Armor: ${s.protection} (w tym ${s.fixedArmor} z nadmiaru kości) · po Armor: ${s.afterArmor} DMG · Soak zredukował: ${s.soaked}</p>
+      <div class="damage-total"><small>Utrata Vigor</small><strong>${s.damage} DMG</strong></div>
+    </article>`;
+  }
+  rollButton.addEventListener('click',()=>{
+    if(!form.reportValidity())return;
+    simulationWorker?.terminate();
+    const current=new Worker('js/defense-worker.js');simulationWorker=current;
+    rollButton.disabled=true;simulation.textContent='Rzucanie kośćmi…';
+    current.onmessage=({data})=>{
+      if(simulationWorker!==current)return;
+      if(data.error)simulation.textContent=data.error;else renderSimulation(data.result);
+      current.terminate();simulationWorker=null;rollButton.disabled=false;
+    };
+    current.onerror=()=>{if(simulationWorker!==current)return;simulation.textContent='Nie udało się wykonać rzutu. Spróbuj ponownie.';current.terminate();simulationWorker=null;rollButton.disabled=false;};
+    current.postMessage({simulate:true,config:config()});
+  });
   function config() {
     const c = Object.fromEntries(new FormData(form));
     for (const field of Object.keys(c)) if (!['dodge','armorSymbols'].includes(field)) c[field] = Number(c[field]);
@@ -55,6 +89,7 @@
     } catch (_) { fail('Kalkulator obrony wymaga otwarcia aplikacji przez serwer HTTP.'); }
   }
   function schedule() {
+    clearSimulation();
     clearTimeout(timer);
     requestId++;
     worker?.terminate();worker=null;

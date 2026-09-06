@@ -368,3 +368,5 @@ input { min-width: 0; }
   .defense-metric strong { font-size: 25px; }
   .defense-chart-row { grid-template-columns: 64px minmax(0,1fr) 64px; gap: 8px; font-size: 11px; }
 }
+[id="defense-simulation"] .rolled-die { width: auto; min-width: 40px; height: auto; min-height: 40px; padding: 8px; flex-wrap: wrap; gap: 4px; }
+[id="defense-simulation"] .power-chip { white-space: normal; overflow-wrap: anywhere; }

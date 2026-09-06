@@ -134,6 +134,7 @@
     const full=distribution(...counts);
     if (!c.armorRerolls || counts.every(n=>n===0)) return {
       ...normalized,
+      choose: () => [0,0,0],
       lossDistribution(loss) {
         const out=new Map();
         full.probabilities.forEach((p,protection)=>{ if(p) add(out,Math.max(0,loss-c.soak-normalized.fixed-protection),p); });
@@ -151,8 +152,21 @@
       const i=Math.min(remaining-1,plan.cdf.length-1);
       return [remaining*plan.cdf[i]-plan.moments[i],plan.cdf[i]];
     };
+    function choose(initial, loss) {
+      const base=loss-c.soak-normalized.fixed-initial.reduce((sum,x)=>sum+x.total,0);
+      let best=plans[0],bestMean=Infinity,bestRisk=Infinity;
+      for(const plan of plans) {
+        const remaining=base+plan.counts.reduce((sum,n,i)=>sum+initial[i].prefix[n],0);
+        const [mean,risk]=score(plan,remaining);
+        if(mean<bestMean-EPS || (Math.abs(mean-bestMean)<=EPS && (risk<bestRisk-EPS || (Math.abs(risk-bestRisk)<=EPS && plan.n<best.n)))) {
+          best=plan;bestMean=mean;bestRisk=risk;
+        }
+      }
+      return best.counts;
+    }
     return {
       ...normalized,
+      choose,
       lossDistribution(loss) {
         const out=new Map();
         for(const red of groups[0]) for(const black of groups[1]) for(const white of groups[2]) {
@@ -174,6 +188,42 @@
         return out;
       }
     };
+  }
+  function simulate(input, random=Math.random) {
+    const c=normalize(input);
+    const dodge=c.dodge==='lesser' ? (c.evasionBonus===0?1:0) : Number(c.dodge)||0;
+    const modifier=c.evasionBonus+dodge;
+    const roll=()=>1+Math.floor(random()*10);
+    const succeeds=(n,guard=0)=>n===10 || (n!==1 && n+modifier+guard>=c.difficulty);
+    const evasion=Array.from({length:c.evasionDice},()=>{const n=roll();return {initial:n,roll:n,guard:0,reroll:null};});
+    let guard=c.guard,free=c.rerolls,heat=c.heatRerolls;
+    const candidates=evasion.filter(x=>!succeeds(x.roll)&&x.roll!==1).sort((a,b)=>b.roll-a.roll);
+    for(const die of candidates) {
+      const cost=c.difficulty-die.roll-modifier;
+      if(cost<=guard){die.guard=cost;guard-=cost;}
+    }
+    for(const die of evasion) {
+      if(!succeeds(die.roll,die.guard) && !die.guard && (free||heat)) {
+        die.reroll=free?'Evasion':'Heat'; if(free)free--;else heat--;
+        die.roll=roll();
+      }
+      die.evaded=succeeds(die.roll,die.guard);
+    }
+    const failures=evasion.filter(x=>!x.evaded).length;
+    const blocked=Math.min(failures,c.block),hits=failures-blocked;
+    const rawDamage=hits ? hits*c.damagePerHit+c.bonusDamage : 0;
+    const armor=armorModel(c),armorDice=[];
+    const face=color=>({...root.KF.POWER_DICE[color][Math.floor(random()*6)]});
+    if(rawDamage>0) for(const color of COLORS) for(let i=0;i<armor.counts[color];i++) {
+      const initial=face(color);armorDice.push({color,initial,face:initial,rerolled:false});
+    }
+    const sorted=COLORS.map(color=>armorDice.filter(x=>x.color===color).sort((a,b)=>a.face[c.armorSymbols]-b.face[c.armorSymbols]));
+    const summaries=sorted.map(dice=>{const prefix=[0];dice.forEach(x=>prefix.push(prefix.at(-1)+x.face[c.armorSymbols]));return {prefix,total:prefix.at(-1)};});
+    const selected=rawDamage>0 ? armor.choose(summaries,rawDamage) : [0,0,0];
+    sorted.forEach((dice,i)=>dice.slice(0,selected[i]).forEach(die=>{die.face=face(die.color);die.rerolled=true;}));
+    const protection=rawDamage>0 ? armor.fixed+armorDice.reduce((sum,x)=>sum+x.face[c.armorSymbols],0) : 0;
+    const afterArmor=Math.max(0,rawDamage-protection),soaked=Math.min(afterArmor,c.soak);
+    return {config:c,modifier,dodge,evasion,guardUsed:c.guard-guard,rerollsUsed:c.rerolls-free,heatUsed:c.heatRerolls-heat,blocked,hits,rawDamage,armorDice,fixedArmor:rawDamage>0?armor.fixed:0,protection,afterArmor,soaked,damage:afterArmor-soaked};
   }
   function calculate(input) {
     const c=normalize(input);
@@ -206,6 +256,6 @@
     };
   }
   root.KF=root.KF||{};
-  root.KF.defense={calculate,normalizeArmor,evasionDistribution,armorModel};
+  root.KF.defense={calculate,simulate,normalizeArmor,evasionDistribution,armorModel};
   if(typeof module!=='undefined')module.exports=root.KF.defense;
 })(typeof globalThis!=='undefined'?globalThis:window);
