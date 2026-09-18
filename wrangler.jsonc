@@ -6,5 +6,13 @@
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "forlorn-forge-db",
+      "database_id": "89ad9ae3-cc27-4c7d-8b72-bcf81f65f698",
+      "migrations_dir": "migrations"
+    }
+  ]
 }

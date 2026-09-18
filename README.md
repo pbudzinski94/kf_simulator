@@ -1,10 +1,16 @@
 # Forlorn Forge
 
-Statyczny kalkulator, komparator i symulator broni do *Kingdoms Forlorn*.
+Kalkulator, komparator i symulator broni do *Kingdoms Forlorn* z biblioteką broni w Cloudflare D1.
 
 ## Uruchomienie
 
-Otwórz `index.html` w przeglądarce. Aplikacja nie wymaga instalowania zależności ani połączenia z serwerem.
+Do samych obliczeń można otworzyć `index.html` w przeglądarce. Biblioteka broni wymaga uruchomienia przez Cloudflare Worker z bindingiem D1 `DB`.
+
+## Biblioteka broni D1
+
+Worker udostępnia `GET /api/weapons` oraz `POST /api/weapons`. Zapis broni o istniejącej nazwie aktualizuje jej parametry. Dane wspólnego Knight Pool, portretu i przeciwnika pozostają lokalne i nie są zapisywane w D1.
+
+Schemat jest wersjonowany w katalogu `migrations`. Migrację lokalną uruchamia `npx wrangler d1 migrations apply forlorn-forge-db --local`, a produkcyjną `npx wrangler d1 migrations apply forlorn-forge-db --remote`.
 
 ## Zakres obliczeń
 
