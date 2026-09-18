@@ -1,16 +1,10 @@
 # Forlorn Forge
 
-Kalkulator, komparator i symulator broni do *Kingdoms Forlorn* z biblioteką broni w Cloudflare D1.
+Statyczny kalkulator, komparator i symulator broni do *Kingdoms Forlorn*.
 
 ## Uruchomienie
 
-Do samych obliczeń można otworzyć `index.html` w przeglądarce. Biblioteka broni wymaga uruchomienia przez Cloudflare Worker z bindingiem D1 `DB`.
-
-## Biblioteka broni D1
-
-Worker udostępnia `GET /api/weapons` oraz `POST /api/weapons`. Zapis broni o istniejącej nazwie aktualizuje jej parametry. Dane wspólnego Knight Pool, portretu i przeciwnika pozostają lokalne i nie są zapisywane w D1.
-
-Schemat jest wersjonowany w katalogu `migrations`. Migrację lokalną uruchamia `npx wrangler d1 migrations apply forlorn-forge-db --local`, a produkcyjną `npx wrangler d1 migrations apply forlorn-forge-db --remote`.
+Otwórz `index.html` w przeglądarce. Aplikacja nie wymaga instalowania zależności ani połączenia z serwerem.
 
 ## Zakres obliczeń
 
@@ -48,3 +42,31 @@ Repozytorium zawiera `wrangler.jsonc` dla osobnego Workera `forlorn-forge-github
 - non-production deploy command: `npx wrangler versions upload`.
 
 Bezpośrednie wdrożenie Cloudflare jest niezależne od istniejącej publikacji Sites pod adresem `chatgpt.site`.
+
+## Odzyskane wdrożenie Cloudflare
+
+Kod interfejsu i Workera odtworzono z wersji produkcyjnej 2026.09.04.1. Worker obsługuje API /api/weapons i korzysta z istniejącej bazy D1 przez binding DB. Plik database/schema.sql zawiera zrzut schematu do inicjalizacji pustej bazy lokalnej; nie uruchamiaj go na istniejącej bazie produkcyjnej.
+
+Lokalnie: wrangler d1 execute DB --local --file database/schema.sql, następnie wrangler dev. Produkcyjne dane pozostają w Cloudflare.
+
+## Zbrojownia: dodawanie, edycja i usuwanie
+
+Zbrojownia udostępnia wyszukiwanie, formularz dodawania i edycji oraz usuwanie z potwierdzeniem. Karty porównania pozwalają wczytać zapisany oręż albo dodać własny wariant. Zmiana parametrów w karcie pozostaje lokalnym wariantem, dopóki nie zostanie dodana do biblioteki.
+
+API: GET/POST /api/weapons, PUT/DELETE /api/weapons/:id. POST nie nadpisuje istniejącego wpisu. Konflikt nazwy zwraca 409. Nazwy są normalizowane przez NFKC, usunięcie skrajnych spacji, połączenie wielokrotnych białych znaków i zamianę liter na małe na potrzeby klucza. Unikalny indeks name_key chroni również przed równoczesnym zapisem.
+
+Dla istniejącej bazy: zastosuj jednorazowo migrations/0002_weapon_name_keys.sql, wyeksportuj SELECT id, name FROM weapons przez wrangler d1 execute DB --remote --json, wygeneruj SQL poleceniem node scripts/weapon-name-keys.cjs rows.json backfill.sql i wykonaj go na tej samej bazie. Generator przerwie pracę przy zduplikowanych nazwach. Nową lokalną bazę inicjalizuj wyłącznie przez database/schema.sql (zawiera już nową kolumnę i indeks). Nie wykonuj obu ścieżek na tej samej bazie.
+
+Testy wymagają Node.js >=22.13 i obejmują rzeczywiste ograniczenia SQLite, CRUD, walidację, duplikaty polskich nazw oraz równoczesne zapisy.
+
+## Kalkulator obrony
+
+Zakładka Obrona oblicza dokładny rozkład utraty Vigor z jednej zwykłej straty spowodowanej atakiem. Parametry: kości i próg Evasion, strata za trafienie i bonus przy co najmniej jednym trafieniu, premia Evasion, jeden wariant Dodge i Block, Guard, dostępne przerzuty Evasion i budżet Heat, łączna pula Armor/Reinforce, symbole ochrony (domyślnie Potential/Break, opcjonalnie Attack), Armor Re-rolls i Soak. Dane są zapisywane lokalnie w przeglądarce.
+
+Silnik js/defense-engine.js liczy dokładne prawdopodobieństwa, a js/defense-worker.js wykonuje pracę poza głównym wątkiem interfejsu. Guard przydzielany jest do najtańszych możliwych do uratowania porażek, przed jednocześnie zadeklarowanymi przerzutami. Naturalne 1/10 pozostają porażką/sukcesem. Block redukuje końcową liczbę trafień. Strategia Armor Re-rolls minimalizuje oczekiwaną utratę Vigor, następnie szansę dodatniej straty i liczbę przerzutów; może zachować już wystarczającą ochronę. Żadna kość nie jest przerzucana dwukrotnie.
+
+Sumę kości pancerza normalizuje się do limitów 7/4/3 i promocji nadmiaru. Tryb „Zawsze lepsze” wybiera większą z sum Break i Attack całego rzutu po przerzutach (remis: Break). Silnik zachowuje wspólny rozkład obu symboli i optymalizuje przerzuty dla tego kryterium. Nigdy nie wybiera symbolu osobno dla każdej kości. Symulator pokazuje obie sumy i wybrany symbol. Soak traktujemy jako dostępną redukcję po pancerzu, po opłaceniu kosztów poza kalkulatorem.
+
+Nie modelujemy Judgements, efektów Crit Evade/Crit Evade Fail, Conditions, Peril Checks, osobnego After Attack ani kosztów i ograniczeń konkretnych kart. Premie wpisuje się po rozstrzygnięciu dostępności źródeł i zasady jednej aktywnej broni defensywnej. Lesser Dodge zakłada brak innych premii, gdy pole Evasion bez Dodge wynosi 0; przypadki znoszących się bonusów wymagają ręcznej oceny.
+
+Test tests/defense.test.cjs niezależnie enumeruje rzuty k10 i wszystkie podzbiory Guard oraz fizyczne ścianki pancerza i wszystkie zestawy przerzutów. Sprawdza także skrajne wyniki, sumę prawdopodobieństw, naturalne 1/10, warianty Dodge/Block, bonus po trafieniu i limity kości.

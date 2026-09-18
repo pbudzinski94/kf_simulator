@@ -28,6 +28,9 @@
   let state = loadState();
   let results = [];
   let savedWeapons = [];
+  let editingId = null;
+  let deletingId = null;
+  let saving = false;
 
   const $ = selector => document.querySelector(selector);
   const pct = value => `${(value * 100).toFixed(value > 0 && value < .01 ? 2 : 1)}%`;
@@ -43,9 +46,9 @@
       const config = await response.json();
       const version = String(config.version || '').trim();
       if (!version) throw new Error('Missing app version');
-      target.textContent = `Wersja ${version} · Obliczenia lokalne · biblioteka broni w D1`;
+      target.textContent = `Wersja ${version} · Obliczenia lokalne · biblioteka broni`;
     } catch (_) {
-      target.textContent = 'Wersja lokalna · Obliczenia lokalne · biblioteka broni w D1';
+      target.textContent = 'Wersja lokalna · Obliczenia lokalne · biblioteka broni';
     }
   }
 
@@ -87,9 +90,10 @@
               ${weaponOptions()}
             </select>
           </div>
-          <button class="button button-save" data-save-weapon type="button">Zapisz broń</button>
+
         </div>
         <div class="weapon-content">
+          <button class="button button-ghost save-comparison" data-save-weapon type="button">Dodaj ten wariant do zbrojowni</button>
           <p class="subheading">Attack Roll · kości k10</p>
           <div class="fields-two">
             <label class="field"><span>Liczba kości ataku</span><input data-bind="attackDice" type="number" min="0" max="20" value="${weapon.attackDice}" /></label>
@@ -121,17 +125,20 @@
 
   function renderWeapons() {
     $('#weapon-grid').innerHTML = state.weapons.map(weaponTemplate).join('');
+    refreshWeaponSelects();
   }
 
   function setLibraryStatus(message, type = '') {
     const target = $('#weapon-library-status');
     target.textContent = message;
-    target.className = type;
+    target.className = 'library-status ' + type;
   }
 
   function refreshWeaponSelects() {
     document.querySelectorAll('[data-load-weapon]').forEach(select => {
       select.innerHTML = weaponOptions();
+      const slot = Number(select.closest('[data-weapon]').dataset.weapon);
+      select.value = state.weapons[slot].id || '';
     });
   }
 
@@ -145,9 +152,10 @@
       if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
       savedWeapons = Array.isArray(data.weapons) ? data.weapons : [];
       refreshWeaponSelects();
+      renderLibrary();
       const message = savedWeapons.length
         ? `${savedWeapons.length} ${savedWeapons.length === 1 ? 'zapisana broń' : 'zapisanych broni'}${showSuccess ? ' · lista odświeżona' : ''}`
-        : 'Biblioteka jest pusta — skonfiguruj broń i zapisz ją poniżej.';
+        : 'Zbrojownia jest pusta. Dodaj swoją pierwszą broń.';
       setLibraryStatus(message, 'success');
     } catch (error) {
       setLibraryStatus(`Nie udało się pobrać biblioteki: ${error.message}`, 'error');
@@ -156,37 +164,86 @@
     }
   }
 
-  async function saveWeapon(index, button) {
-    const weapon = state.weapons[index];
-    if (!weapon.name.trim()) {
-      setLibraryStatus('Podaj nazwę broni przed zapisem.', 'error');
-      return;
+  function renderLibrary() {
+    const query = $('#weapon-search').value.trim().normalize('NFKC').toLowerCase();
+    const filtered = savedWeapons.filter(w => w.name.normalize('NFKC').toLowerCase().includes(query));
+    $('#weapon-library-list').innerHTML = filtered.length ? filtered.map(w => `<article class="library-row">
+      <div class="library-weapon"><strong>${escapeHtml(w.name)}</strong><span>${w.attackDice} × k10 · bonus ataku ${w.attackBonus >= 0 ? '+' : ''}${w.attackBonus} · +${w.bonusDamage} DMG</span></div>
+      <div class="library-actions"><button class="button button-ghost" data-use-id="${w.id}" data-slot="0" aria-label="Porównaj ${escapeHtml(w.name)} w polu 1">Do I</button><button class="button button-ghost" data-use-id="${w.id}" data-slot="1" aria-label="Porównaj ${escapeHtml(w.name)} w polu 2">Do II</button><button class="button button-ghost" data-edit-id="${w.id}" aria-label="Edytuj ${escapeHtml(w.name)}">Edytuj</button><button class="button button-danger-ghost" data-delete-id="${w.id}" aria-label="Usuń ${escapeHtml(w.name)}">Usuń</button></div>
+    </article>`).join('') : '<p class="library-empty">' + (query ? 'Brak broni pasujących do wyszukiwania.' : 'Twoje zapisane bronie pojawią się tutaj.') + '</p>';
+  }
+
+  function openEditor(weapon = { name: '', attackDice: 1, attackBonus: 0, bonusDamage: 0, perHit: { red: 0, black: 0, white: 0 }, extraDice: { red: 0, black: 0, white: 0 } }, id = null) {
+    editingId = id;
+    $('#editor-title').textContent = id === null ? 'Dodaj broń' : 'Edytuj broń';
+    $('#editor-submit').textContent = id === null ? 'Dodaj broń' : 'Zapisz zmiany';
+    $('#editor-error').textContent = '';
+    $('#editor-fields').innerHTML = `
+      <label class="field"><span>Nazwa broni</span><input data-bind="name" value="${escapeHtml(weapon.name)}" required maxlength="100" autocomplete="off" aria-describedby="name-help" /></label>
+      <p id="name-help" class="field-group-note">Unikalna nazwa, do 100 znaków. Wielkość liter nie rozróżnia broni.</p>
+      <fieldset class="field-group"><legend>Atak</legend><div class="fields-three">
+        <label class="field"><span>Kości k10</span><input data-bind="attackDice" type="number" required min="0" max="20" value="${weapon.attackDice}" /></label>
+        <label class="field"><span>Bonus do wyniku</span><input data-bind="attackBonus" type="number" required min="-20" max="20" value="${weapon.attackBonus}" /></label>
+        <label class="field"><span>Dodatkowe DMG</span><input data-bind="bonusDamage" type="number" required min="0" max="50" value="${weapon.bonusDamage}" /></label>
+      </div></fieldset>
+      <fieldset class="field-group"><legend>Power za każde trafienie</legend><div class="fields-three">${dieInputs('perHit',weapon.perHit)}</div></fieldset>
+      <fieldset class="field-group"><legend>Dodatkowe Power po trafieniu</legend><div class="fields-three">${dieInputs('extraDice',weapon.extraDice)}</div></fieldset>`;
+    $('#editor-fields').querySelectorAll('input').forEach(input => input.required = true);
+    $('#weapon-editor').showModal();
+    $('#editor-fields input').focus();
+  }
+
+  async function submitWeapon(event) {
+    event.preventDefault();
+    if (saving) return;
+    const weapon = { perHit: {}, extraDice: {} };
+    $('#editor-fields').querySelectorAll('[data-bind]').forEach(input => setNested(weapon, input.dataset.bind, input.value));
+    weapon.name = weapon.name.normalize('NFKC').trim().replace(/\s+/gu, ' ');
+    const errorTarget = $('#editor-error');
+    errorTarget.textContent = '';
+    if (!weapon.name) { errorTarget.textContent = 'Podaj nazwę broni.'; return; }
+    if (savedWeapons.some(w => w.id !== editingId && w.name.normalize('NFKC').trim().replace(/\s+/gu, ' ').toLowerCase() === weapon.name.toLowerCase())) {
+      errorTarget.textContent = 'Broń o tej nazwie już istnieje. Wybierz inną nazwę.'; return;
     }
-    button.disabled = true;
-    button.textContent = 'Zapisywanie…';
-    setLibraryStatus(`Zapisywanie „${weapon.name.trim()}”…`);
+    saving = true;
+    $('#weapon-form').querySelectorAll('button, input').forEach(el => el.disabled = true);
     try {
-      const response = await fetch('/api/weapons', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(weapon)
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-      await loadWeaponLibrary();
-      setLibraryStatus(`Zapisano „${data.weapon.name}”.`, 'success');
-    } catch (error) {
-      setLibraryStatus(`Nie udało się zapisać broni: ${error.message}`, 'error');
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Zapisz broń';
-    }
+      const response = await fetch('/api/weapons' + (editingId === null ? '' : '/' + editingId), { method: editingId === null ? 'POST' : 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(weapon) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Nie udało się zapisać broni. Spróbuj ponownie.');
+      savedWeapons = savedWeapons.filter(w => w.id !== data.weapon.id).concat(data.weapon).sort((a,b) => a.name.localeCompare(b.name, 'pl'));
+      state.weapons = state.weapons.map(w => w.id === data.weapon.id ? deepClone(data.weapon) : w);
+      renderWeapons(); recalculate(); renderLibrary();
+      $('#weapon-editor').close();
+      $('#weapon-search').focus();
+      setLibraryStatus('Zapisano „' + data.weapon.name + '”.', 'success');
+    } catch (error) { errorTarget.textContent = error.message; }
+    finally { saving = false; $('#weapon-form').querySelectorAll('button, input').forEach(el => el.disabled = false); }
+  }
+
+  async function deleteWeapon() {
+    if (saving) return;
+    saving = true;
+    $('#delete-dialog').querySelectorAll('button').forEach(el => el.disabled = true);
+    try {
+      const response = await fetch('/api/weapons/' + deletingId, { method: 'DELETE' });
+      if (!response.ok && response.status !== 404) { const data = await response.json(); throw new Error(data.error || 'Nie udało się usunąć broni.'); }
+      savedWeapons = savedWeapons.filter(w => w.id !== deletingId);
+      renderLibrary(); refreshWeaponSelects();
+      state.weapons.forEach(w => { if (w.id === deletingId) delete w.id; });
+      saveState();
+      $('#delete-dialog').close();
+      $('#weapon-search').focus();
+      setLibraryStatus('Broń została usunięta ze zbrojowni.', 'success');
+    } catch (error) { $('#delete-error').textContent = error.message; }
+    finally { saving = false; $('#delete-dialog').querySelectorAll('button').forEach(el => el.disabled = false); }
   }
 
   function loadSavedWeapon(index, id) {
     const saved = savedWeapons.find(weapon => String(weapon.id) === String(id));
     if (!saved) return;
     state.weapons[index] = {
+      id: saved.id,
       name: saved.name,
       attackDice: saved.attackDice,
       attackBonus: saved.attackBonus,
@@ -309,7 +366,10 @@
     const target = event.target;
     const weaponCard = target.closest('[data-weapon]');
     if (weaponCard && target.dataset.bind) {
-      setNested(state.weapons[Number(weaponCard.dataset.weapon)], target.dataset.bind, target.value);
+      const weapon = state.weapons[Number(weaponCard.dataset.weapon)];
+      setNested(weapon, target.dataset.bind, target.value);
+      delete weapon.id;
+      weaponCard.querySelector('[data-load-weapon]').value = '';
     } else if (target.id === 'monster-to-hit') state.monster.toHit = safeInt(target.value, 7);
     else if (target.id === 'monster-at') state.monster.at = safeInt(target.value, 0);
     else if (target.id.startsWith('portrait-')) state.portrait[target.id.replace('portrait-', '')] = safeInt(target.value);
@@ -322,7 +382,7 @@
     const card = event.target.closest('[data-weapon]');
     if (!card) return;
     const index = Number(card.dataset.weapon);
-    if (event.target.matches('[data-save-weapon]')) saveWeapon(index, event.target);
+    if (event.target.matches('[data-save-weapon]')) openEditor(deepClone(state.weapons[index]));
     if (event.type === 'change' && event.target.matches('[data-load-weapon]')) loadSavedWeapon(index, event.target.value);
   }
 
@@ -358,6 +418,26 @@
   document.addEventListener('input', handleInput);
   document.addEventListener('click', handleWeaponActions);
   document.addEventListener('change', handleWeaponActions);
+  $('#add-weapon').addEventListener('click', () => openEditor());
+  $('#weapon-search').addEventListener('input', renderLibrary);
+  $('#weapon-form').addEventListener('submit', submitWeapon);
+  $('#confirm-delete').addEventListener('click', deleteWeapon);
+  document.querySelectorAll('dialog').forEach(dialog => {
+    dialog.addEventListener('cancel', event => { if (saving) event.preventDefault(); });
+    dialog.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => { if (!saving) dialog.close(); }));
+  });
+  $('#weapon-library-list').addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.useId) loadSavedWeapon(Number(button.dataset.slot), button.dataset.useId);
+    if (button.dataset.editId) { const w = savedWeapons.find(w => String(w.id) === button.dataset.editId); if (w) openEditor(w, w.id); }
+    if (button.dataset.deleteId) {
+      const w = savedWeapons.find(w => String(w.id) === button.dataset.deleteId);
+      if (!w) return;
+      deletingId = w.id; $('#delete-description').textContent = 'Usunąć „' + w.name + '”? Tej operacji nie można cofnąć.';
+      $('#delete-error').textContent = ''; $('#delete-dialog').showModal(); $('#delete-dialog [data-close-dialog]').focus();
+    }
+  });
   $('#refresh-weapons').addEventListener('click', () => loadWeaponLibrary(true));
   $('#roll-both').addEventListener('click', rollBoth);
   $('#reset-all').addEventListener('click', resetAll);

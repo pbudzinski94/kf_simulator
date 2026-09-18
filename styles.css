@@ -273,3 +273,100 @@ select { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Shared weapon library and focused editing dialogs. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.library-panel { padding: 24px; }
+.library-heading, .library-toolbar, .library-row, .dialog-heading, .dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.library-heading h3 { font-size: 23px; }
+.library-heading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+.library-heading > .button { flex-shrink: 0; }
+.library-toolbar { margin-top: 22px; }
+.library-search { flex: 1; min-width: 0; }
+.library-status { color: var(--muted); font-size: 12px; min-height: 18px; margin: 12px 0; }
+.library-status.success, #weapon-library-status.success { color: var(--green); }
+.library-status.error, #weapon-library-status.error, .form-error { color: #f0a399; }
+.library-list { max-height: 390px; overflow-y: auto; }
+.library-row { padding: 16px 0; border-top: 1px solid var(--line); }
+.library-weapon { min-width: 0; }
+.library-weapon strong { display: block; font-size: 15px; overflow-wrap: anywhere; }
+.library-weapon span { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+.library-actions { display: flex; gap: 7px; flex-shrink: 0; flex-wrap: wrap; }
+.library-actions .button { padding: 8px 12px; }
+.library-empty { padding: 20px 0; margin: 0; text-align: center; color: var(--muted); }
+.button-danger { background: #9a423b; border-color: #c8786c; color: #fff; }
+.button-danger-ghost { background: transparent; border-color: rgba(189,98,88,.35); color: #e5a096; }
+.button-danger-ghost:hover, .button-danger:hover { border-color: #e5a096; background: rgba(189,98,88,.2); }
+.weapon-header { align-items: flex-start; }
+.weapon-index { flex: 0 0 29px; margin-top: 5px; }
+.weapon-title-fields { width: 0; }
+.save-comparison { width: 100%; margin: 0 0 22px; color: var(--gold); }
+.weapon-dialog { width: min(620px, calc(100% - 24px)); max-height: calc(100dvh - 32px); padding: 28px; color: var(--text); background: #171d18; border: 1px solid var(--line-bright); border-radius: 8px; box-shadow: var(--shadow); overflow-y: auto; }
+.weapon-dialog::backdrop { background: rgba(0,0,0,.75); backdrop-filter: blur(5px); }
+.dialog-heading { margin-bottom: 24px; }
+.dialog-heading h2 { font-size: 26px; margin-top: 5px; }
+.editor-fields { display: grid; gap: 18px; }
+.editor-fields .field-group { padding: 16px; min-width: 0; }
+.dialog-actions { justify-content: flex-end; padding-top: 18px; border-top: 1px solid var(--line); margin-top: 18px; }
+.form-error { font-size: 13px; overflow-wrap: anywhere; }
+.form-error:empty { display: none; }
+.delete-dialog { max-width: 480px; }
+.delete-dialog p { overflow-wrap: anywhere; }
+button:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 3px; }
+.field, .die-field, .fields-two, .fields-three { min-width: 0; }
+input { min-width: 0; }
+@media (max-width: 680px) {
+  .library-row { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .library-actions { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .library-actions .button { padding-inline: 6px; }
+  .library-panel { padding: 18px; }
+  .library-heading { align-items: flex-start; flex-direction: column; }
+  .library-heading > .button { width: 100%; }
+  .weapon-dialog { padding: 20px; }
+  .dialog-heading h2 { font-size: 22px; }
+  .editor-fields .field-group { padding: 12px; }
+  .editor-fields .field span { min-height: 36px; }
+  .dialog-actions .button { flex: 1; }
+}
+
+/* Attack / defense calculators share the same visual language. */
+[hidden] { display: none !important; }
+.mode-tabs { display: flex; gap: 6px; padding: 5px; margin-bottom: 30px; width: fit-content; border: 1px solid var(--line); background: #101510; border-radius: 5px; }
+.mode-tab { min-width: 125px; min-height: 44px; padding: 10px 26px; background: transparent; border: 1px solid transparent; color: var(--muted); border-radius: 3px; cursor: pointer; font-weight: 600; }
+.mode-tab[aria-selected="true"] { background: rgba(198,168,106,.12); border-color: var(--line-bright); color: var(--gold-bright); }
+.defense-intro { margin-bottom: 24px; }
+.defense-section { padding: 26px; }
+.defense-section h3 { font-size: 23px; }
+.defense-four { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
+.defense-three { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }
+.defense-three .field, .defense-four .field { align-content: start; }
+.defense-four .field > span, .defense-three .field > span { min-height: 36px; }
+.armor-dice-inputs { margin: 18px 0 22px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.defense-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.defense-metric { padding: 22px 16px; background: var(--bg-soft); }
+.defense-metric strong { display: block; font-size: 30px; font-family: Cinzel,Georgia,serif; color: var(--gold-bright); }
+.defense-metric span { display: block; color: var(--muted); font-size: 11px; }
+.defense-chart { display: grid; gap: 10px; margin-top: 26px; }
+.defense-chart-row { display: grid; grid-template-columns: 74px minmax(0,1fr) 78px; align-items: center; gap: 12px; font-size: 12px; }
+.defense-chart-row > span { color: var(--muted); }
+.defense-chart-row > strong { text-align: right; font-weight: 500; }
+.defense-chart-track { height: 18px; background: rgba(255,255,255,.035); }
+.defense-chart-bar { height: 100%; background: #b8875e; min-width: 1px; }
+.defense-chart-bar.zero { background: #8da67d; }
+@media(max-width:850px) {
+  .defense-four, .defense-three, .defense-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:520px) {
+  .mode-tabs { width: 100%; }
+  .mode-tab { flex: 1; min-width: 0; }
+  .defense-section { padding: 18px; }
+  .defense-three { grid-template-columns: 1fr; gap: 14px; }
+  .defense-three .field > span { min-height: 0; }
+  .armor-dice-inputs { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+  .armor-dice-inputs .die-field span { min-height: 38px; }
+  .defense-metric { padding: 16px 12px; }
+  .defense-metric strong { font-size: 25px; }
+  .defense-chart-row { grid-template-columns: 64px minmax(0,1fr) 64px; gap: 8px; font-size: 11px; }
+}
+[id="defense-simulation"] .rolled-die { width: auto; min-width: 40px; height: auto; min-height: 40px; padding: 8px; flex-wrap: wrap; gap: 4px; }
+[id="defense-simulation"] .power-chip { white-space: normal; overflow-wrap: anywhere; }
